@@ -46,7 +46,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/home`,
         },
       });
       if (error) throw error;
@@ -93,10 +93,10 @@ export function SignUpForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
                 </div>
                 <Input
-                  id="repeat-password"
+                  id="confirm-password"
                   type="password"
                   required
                   value={repeatPassword}
