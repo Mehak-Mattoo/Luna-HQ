@@ -4,6 +4,205 @@
 
 @custom-variant dark (&:is(.dark *));
 
+h1 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-weight: bold;
+  font-size: 42px; /* Original size */
+  line-height: 1;
+}
+
+h2 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-weight: bold;
+  font-size: 36px; /* Original size */
+  line-height: 1.2;
+}
+
+h3 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-weight: 500;
+  font-size: 24px; /* Original size */
+}
+
+h4 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-size: 22px; /* Original size */
+}
+
+h5 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-size: 18px;
+}
+h6 {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-size: 14px;
+}
+
+p {
+  font-family: var(--font-inter), Inter, sans-serif;
+
+  font-size: 16px; /* Original size */
+}
+
+body {
+  font-family: var(--font-inter), "Inter", sans-serif;
+
+  font-size: 20px;
+  font-weight: medium;
+}
+
+section {
+  position: relative;
+}
+
+span {
+  font-size: 12px;
+  line-height: 1;
+}
+
+input,
+option,
+select,
+textarea {
+  font-size: 14px;
+}
+
+button {
+  font-size: 14px;
+  cursor: pointer;
+}
+
+label {
+  font-size: 16px; /* 87.5% of original */
+  font-weight: 500;
+  color: #19213d;
+}
+
+@media screen and (max-width: 1200px) {
+  h1 {
+    font-size: 38px; /* 87.5% of original */
+  }
+
+  h2 {
+    font-size: 30px; /* 88% of original */
+  }
+}
+
+@media screen and (max-width: 992px) {
+  h1 {
+    font-size: 36px; /* 75% of original */
+  }
+
+  h2 {
+    font-size: 28px; /* 82% of original */
+  }
+
+  h4 {
+    font-size: 20px; /* Original size */
+  }
+
+  label {
+    font-size: 13px; /* 87.5% of original */
+  }
+}
+
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 30px; /* 67% of original */
+  }
+
+  h2 {
+    font-size: 24px; /* 70% of original */
+    line-height: 1;
+  }
+
+  h3 {
+    font-size: 22px; /* 78% of original */
+  }
+
+  h5 {
+    font-size: 12px;
+  }
+
+  p {
+    font-size: 12px; /* 87.5% of original */
+  }
+
+  h4 {
+    font-size: 16px; /* Original size */
+  }
+  button {
+    font-size: 12px;
+  }
+
+  span {
+    font-size: 12px; /* Original size */
+  }
+
+  h6 {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  h1 {
+    font-size: 22px; /* 58% of original */
+  }
+
+  h2 {
+    font-size: 18px; /* 65% of original */
+    line-height: 27px;
+  }
+
+  h3 {
+    font-size: 16px; /* 71% of original */
+  }
+
+  p {
+    font-size: 11px; /* 87.5% of original */
+  }
+
+  h5 {
+    font-size: 10px;
+  }
+  label {
+    font-size: 12px; /* 87.5% of original */
+  }
+
+  span {
+    font-size: 11px; /* Original size */
+    line-height: 1;
+  }
+
+  input,
+  option,
+  select,
+  textarea {
+    font-size: 10px;
+  }
+
+  input {
+    font-size: 12px;
+  }
+  h6 {
+    font-size: 11px;
+  }
+
+  body {
+    font-size: 16px; /* 80% of original */
+  }
+
+  h4 {
+    font-size: 13px; /* Original size */
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

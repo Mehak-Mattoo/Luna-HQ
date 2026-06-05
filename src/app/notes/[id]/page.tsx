@@ -27,6 +27,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useSummarizeNote } from "@/hooks/useSummarizeNote";
+import {
+  SummarizeDrawer,
+  summarizeButtonLabel,
+} from "@/components/SummarizeDrawer";
 
 export default function NoteDetailPage() {
   const params = useParams();
@@ -42,10 +46,16 @@ export default function NoteDetailPage() {
   const uploadAttachment = useUploadNoteAttachment();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [bulletPoints, setBulletPoints] = useState<string[] | null>(null);
+  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
 
   const note = notes?.find((n) => String(n.id) === noteId);
+  const summarizeMutation = useSummarizeNote();
+
+  useEffect(() => {
+    summarizeMutation.reset();
+    setSummaryDrawerOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when navigating to another note
+  }, [noteId]);
 
   useEffect(() => {
     const storagePath = note?.attachment_path;
@@ -102,7 +112,13 @@ export default function NoteDetailPage() {
     }
   };
 
-  const handleSummarizeNote = useSummarizeNote();
+  function handleSummarizeClick() {
+    if (!note) return;
+
+    summarizeMutation.reset();
+    setSummaryDrawerOpen(true);
+    summarizeMutation.mutate(note);
+  }
 
   if (isError) {
     return (
@@ -126,7 +142,7 @@ export default function NoteDetailPage() {
     <div className="mx-auto max-w-4xl px-4 py-6">
       <Link
         href={protectedRoutes.HOME}
-        className="flex items-center gap-2 text-sm text-muted-foreground"
+        className="flex items-center gap-2 text-lg mb-6 text-muted-foreground"
       >
         <ArrowLeft />
         Back
@@ -163,13 +179,13 @@ export default function NoteDetailPage() {
         />
       )}
 
-      {attachmentUrl && note.attachment_mime === "application/pdf" && (
+      {/* {attachmentUrl && note.attachment_mime === "application/pdf" && (
         <iframe
           src={attachmentUrl}
           title={note.attachment_name ?? "PDF preview"}
           className="mt-4 h-96 w-full rounded-lg border"
         />
-      )}
+      )} */}
 
       {attachmentUrl && (
         <a
@@ -232,31 +248,24 @@ export default function NoteDetailPage() {
         onCancel={() => setOpenEditDialog(false)}
       />
 
-      {
-        <div className=" absolute bottom-5 right-5">
-          <Button
-            onClick={() => handleSummarizeNote.mutate(note)}
-            disabled={handleSummarizeNote.isPending}
-          >
-            {handleSummarizeNote.isPending ? "Summarizing..." : "Summarize"}
-          </Button>
-        </div>
-      }
-      {handleSummarizeNote.error && (
-        <p className="mt-4 text-sm text-destructive">
-          {handleSummarizeNote.error.message}
-        </p>
-      )}
-      {handleSummarizeNote.data && (
-        <div className="mt-4 space-y-2">
-          <p className="font-medium">{handleSummarizeNote.data.summary}</p>
-          <ul className="list-disc pl-5 text-sm text-muted-foreground">
-            {handleSummarizeNote.data.bulletPoints.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="absolute bottom-5 right-5">
+        <Button
+          onClick={handleSummarizeClick}
+          disabled={summarizeMutation.isPending}
+          size="lg"
+        >
+          {summarizeButtonLabel(note, summarizeMutation.isPending)}
+        </Button>
+      </div>
+
+      <SummarizeDrawer
+        note={note}
+        open={summaryDrawerOpen}
+        onOpenChange={setSummaryDrawerOpen}
+        summary={summarizeMutation.data}
+        error={summarizeMutation.error?.message ?? null}
+        isPending={summarizeMutation.isPending}
+      />
     </div>
   );
 }
