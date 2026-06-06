@@ -2,12 +2,10 @@ import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { noteSummarySchema, type NoteSummary } from "@/lib/schema/noteSummary";
+import { BUCKET, MODEL_NAME } from "./constants/constants";
 import { Note } from "@/hooks/useNotes";
 
-const BUCKET = "note-attachments";
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-
-
 
 type AttachmentFile = {
   data: Buffer;
@@ -78,7 +76,7 @@ Read the attached PDF ("${attachment.name}") and combine it with the note conten
     return `Summarize this note titled "${note.title}".
 
 User-written content:
-${note.content || "(none)"}
+${note.content }
 
 Read the attached image ("${attachment.name}") and combine it with the note content into one coherent summary with about 3 bullet points.`;
   }
@@ -102,7 +100,7 @@ export async function summarizeNoteForUser(
     .eq("id", noteId)
     .single();
 
-  if ( !note) {
+  if (!note) {
     throw new SummarizeNoteError("Note not found", 404);
   }
 
@@ -115,7 +113,7 @@ export async function summarizeNoteForUser(
 
   if (attachment) {
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: google(MODEL_NAME),
       schema: noteSummarySchema,
       messages: [
         {
@@ -136,7 +134,7 @@ export async function summarizeNoteForUser(
   }
 
   const { object } = await generateObject({
-    model: google("gemini-2.5-flash"),
+    model: google(MODEL_NAME),
     schema: noteSummarySchema,
     prompt: instruction,
   });

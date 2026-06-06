@@ -86,14 +86,12 @@ export function NoteForm({
                 />
               </Field>
 
-              
-
               <Field>
                 <Label htmlFor="attachment">Attachment</Label>
                 <Input
                   id="attachment"
                   type="file"
-                  accept="image/*,.pdf" 
+                  accept="image/*,.pdf"
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 />
                 {note?.attachment_name && (

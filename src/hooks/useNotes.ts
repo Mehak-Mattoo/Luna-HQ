@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { TABLE_KEYS } from "@/lib/constants/constants";
+import { BUCKET } from "@/lib/constants/constants";
 
 export type NoteFormPayload = {
   title: string;
@@ -18,12 +20,6 @@ export interface Note {
   created_at: string;
   updated_at: string | null;
 }
-
-const TABLE_KEYS = {
-  NOTES: "notes",
-};
-
-const BUCKET = "note-attachments";
 
 const fetchNotes = async (): Promise<Note[]> => {
   const { data, error } = await supabase
@@ -184,13 +180,3 @@ export function useUploadNoteAttachment() {
     },
   });
 }
-
-
-// async function getAttachmentUrl(storagePath: string) {
-//   const { data, error } = await supabase.storage
-//     .from(BUCKET)
-//     .createSignedUrl(storagePath, 60 * 60); // 1 hour
-
-//   if (error) throw error;
-//   return data.signedUrl;
-// }

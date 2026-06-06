@@ -31,6 +31,9 @@ import {
   SummarizeDrawer,
   summarizeButtonLabel,
 } from "@/components/SummarizeDrawer";
+import { NoteChatPanel } from "@/components/NoteChatPanel";
+import { BUCKET } from "@/lib/constants/constants";
+import { LUNA } from "@/lib/constants/constants";
 
 export default function NoteDetailPage() {
   const params = useParams();
@@ -47,6 +50,7 @@ export default function NoteDetailPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const note = notes?.find((n) => String(n.id) === noteId);
   const summarizeMutation = useSummarizeNote();
@@ -68,7 +72,7 @@ export default function NoteDetailPage() {
 
     (async () => {
       const { data, error } = await supabase.storage
-        .from("note-attachments")
+        .from(BUCKET)
         .createSignedUrl(storagePath, 3600);
 
       if (!cancelled && !error && data?.signedUrl) {
@@ -104,11 +108,7 @@ export default function NoteDetailPage() {
       }
       setOpenEditDialog(false);
     } catch (err) {
-      setSubmitError(
-        err instanceof Error
-          ? err.message
-          : "Failed to save note or attachment.",
-      );
+      setSubmitError("Failed to save note or attachment.");
     }
   };
 
@@ -120,6 +120,7 @@ export default function NoteDetailPage() {
     summarizeMutation.mutate(note);
   }
 
+  
   if (isError) {
     return (
       <div>
@@ -150,8 +151,8 @@ export default function NoteDetailPage() {
 
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="mt-4 text-3xl font-semibold">{note.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="mt-4 font-semibold">{note.title}</h1>
+          <p className="mt-1 text-muted-foreground">
             {new Date(note.created_at).toLocaleString()}
           </p>
         </div>
@@ -188,14 +189,12 @@ export default function NoteDetailPage() {
       )} */}
 
       {attachmentUrl && (
-        <a
-          href={attachmentUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-block text-sm underline"
+        <Button
+          onClick={() => window.open(attachmentUrl, "_blank")}
+          className="mt-2 inline-block "
         >
           Open {note.attachment_name}
-        </a>
+        </Button>
       )}
 
       {submitError && (
@@ -248,7 +247,10 @@ export default function NoteDetailPage() {
         onCancel={() => setOpenEditDialog(false)}
       />
 
-      <div className="absolute bottom-5 right-5">
+      <div className="absolute bottom-5 right-5 flex gap-2">
+        <Button variant="outline" size="lg" onClick={() => setChatOpen(true)}>
+          {`Ask ${LUNA}`}
+        </Button>
         <Button
           onClick={handleSummarizeClick}
           disabled={summarizeMutation.isPending}
@@ -257,6 +259,8 @@ export default function NoteDetailPage() {
           {summarizeButtonLabel(note, summarizeMutation.isPending)}
         </Button>
       </div>
+
+      <NoteChatPanel note={note} open={chatOpen} onOpenChange={setChatOpen} />
 
       <SummarizeDrawer
         note={note}

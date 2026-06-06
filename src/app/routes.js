@@ -16,4 +16,5 @@ export const protectedRoutes = {
 
 export const apiRoutes = {
   GENERATE: "/api/generate",
+  CHAT: "/api/chat",
 };

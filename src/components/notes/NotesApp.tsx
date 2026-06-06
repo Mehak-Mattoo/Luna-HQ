@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { apiRoutes, protectedRoutes } from "@/app/routes";
 import { supabase } from "@/lib/supabase";
 import { generateText } from "ai";
+import { Button } from "../ui/button";
 
 export type { NoteFormPayload };
 
@@ -101,45 +102,20 @@ export function NotesApp() {
     setOpenDialog(true);
   }
 
-  async function handleGenerateText() {
-    const res = await fetch(apiRoutes.GENERATE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: "What is love?" }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error ?? "AI request failed");
-    }
-
-    const { text } = await res.json();
-    console.log(text);
-  }
-  // useEffect(() => {
-  //   handleGenerateText();
-  // }, []);
-
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className=" text-3xl font-semibold tracking-tight text-foreground">
-            Your notes
-          </h1>
+          <h2 className=" text-foreground">Your notes</h2>
         </div>
 
-        <button
-          type="button"
-          onClick={handleCreateClick}
-          className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground cursor-pointer transition hover:bg-primary/90"
-        >
+        <Button onClick={handleCreateClick} size="lg">
           Add Note
-        </button>
+        </Button>
       </div>
 
-      <div className="">
-        <section className="rounded-3xl bg-background shadow-sm">
+      <>
+        <section className="bg-background ">
           {isLoading ? (
             <div className="rounded-3xl border border-dashed border-border bg-muted p-8 text-center text-sm text-muted-foreground">
               Loading notes…
@@ -153,7 +129,7 @@ export function NotesApp() {
               No notes yet. Create one to get started.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 ">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 ">
               {notes.map((note) => (
                 <button
                   key={note.id}
@@ -161,7 +137,7 @@ export function NotesApp() {
                   onClick={() =>
                     router.push(`${protectedRoutes.NOTE}/${String(note.id)}`)
                   }
-                  className={`w-full cursor-pointer rounded-xl border px-4 py-3 text-left transition duration-150 ${
+                  className={`w-full cursor-pointer rounded-xl  border px-4 py-3 text-left transition duration-150 ${
                     note.id === selectedNoteId
                       ? "border-primary bg-primary/5"
                       : "border-border bg-background hover:border-primary/70 hover:bg-primary/5"
@@ -175,7 +151,7 @@ export function NotesApp() {
                       {new Date(note.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                  <p className="mt-2 line-clamp-2 text-muted-foreground">
                     {note.content}
                   </p>
                 </button>
@@ -196,7 +172,7 @@ export function NotesApp() {
             setOpenDialog(false);
           }}
         />
-      </div>
+      </>
     </div>
   );
 }
