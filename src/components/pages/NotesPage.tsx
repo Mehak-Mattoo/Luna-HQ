@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { NoteForm } from "@/components/helpers/NoteForm";
+import { NoteForm } from "@/components/pages/NoteForm";
 import { useNoteStore } from "@/lib/store";
 import { notePath, protectedRoutes } from "@/app/routes";
 import { supabase } from "@/lib/supabase";
@@ -19,7 +19,7 @@ import {
 } from "@/hooks/useNotes";
 import { useFolders } from "@/hooks/useFolders";
 
-const Homepage = () => {
+const NotesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const folderId = searchParams.get("folder");
@@ -97,7 +97,7 @@ const Homepage = () => {
       setOpenDialog(false);
 
       if (shouldOpenCreate && folderId) {
-        router.replace(`${protectedRoutes.MY_NOTES}?folder=${folderId}`);
+        router.replace(`${protectedRoutes.ALL_NOTES}?folder=${folderId}`);
       }
     } catch (err) {
       setSubmitError(
@@ -124,13 +124,9 @@ const Homepage = () => {
     setOpenDialog(true);
   }
 
-  const heading = activeFolder
-    ? `${activeFolder.name}`
-    : "Your notes";
+  const heading = activeFolder ? `${activeFolder.name}` : "Your notes";
 
-  const subheading = activeFolder
-    ? "Notes in this folder"
-    : "All your notes";
+  const subheading = activeFolder ? "Notes in this folder" : "All your notes";
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
@@ -145,9 +141,7 @@ const Homepage = () => {
         </Button>
       </div>
 
-      {submitError && (
-        <p className="text-sm text-destructive">{submitError}</p>
-      )}
+      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
       <section className="bg-background">
         {isLoading ? (
@@ -170,9 +164,7 @@ const Homepage = () => {
               <button
                 key={note.id}
                 type="button"
-                onClick={() =>
-                  router.push(notePath(note))
-                }
+                onClick={() => router.push(notePath(note))}
                 className={`w-full cursor-pointer rounded-xl border px-4 py-3 text-left transition duration-150 ${
                   note.id === selectedNoteId
                     ? "border-primary bg-primary/5"
@@ -205,7 +197,7 @@ const Homepage = () => {
           setSubmitError(null);
           setOpenDialog(false);
           if (shouldOpenCreate && folderId) {
-            router.replace(`${protectedRoutes.MY_NOTES}?folder=${folderId}`);
+            router.replace(`${protectedRoutes.ALL_NOTES}?folder=${folderId}`);
           }
         }}
       />
@@ -213,4 +205,4 @@ const Homepage = () => {
   );
 };
 
-export default Homepage;
+export default NotesPage;

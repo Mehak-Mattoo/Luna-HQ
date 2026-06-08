@@ -9,10 +9,8 @@ export const authRoutes = {
 
 export const protectedRoutes = {
   HOME: "/home",
-  MY_NOTES: "/home/mynotes",
-  NOTE: "/home/notes",
+  ALL_NOTES: "/home/notes",
   PROFILE: "/home/profile",
-  SETTINGS: "/settings",
 };
 
 export const apiRoutes = {
@@ -26,14 +24,14 @@ export function notePath(note: {
 }) {
   const id = String(note.id);
   if (note.folder_id) {
-    return `${protectedRoutes.NOTE}/${note.folder_id}/${id}`;
+    return `${protectedRoutes.ALL_NOTES}/${note.folder_id}/${id}`;
   }
-  return `${protectedRoutes.NOTE}/${id}`;
+  return `${protectedRoutes.ALL_NOTES}/${id}`;
 }
 
 export function myNotesPath(folderId?: string | null) {
   if (folderId) {
-    return `${protectedRoutes.MY_NOTES}?folder=${folderId}`;
+    return `${protectedRoutes.ALL_NOTES}?folder=${folderId}`;
   }
-  return protectedRoutes.MY_NOTES;
+  return protectedRoutes.ALL_NOTES;
 }

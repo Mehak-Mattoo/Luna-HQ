@@ -1,8 +1,9 @@
-import Homepage from "@/components/helpers/Homepage";
+import HomePage from '@/components/pages/HomePage'
 
-export default async function Home() {
-  return <>
-  
-  
-  Home</>;
+const page = () => {
+  return (
+    <HomePage />
+  )
 }
+
+export default page

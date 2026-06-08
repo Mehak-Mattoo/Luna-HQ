@@ -50,8 +50,8 @@ function notesHref(folderId?: string, create?: boolean) {
   if (create) params.set("create", "1");
   const query = params.toString();
   return query
-    ? `${protectedRoutes.MY_NOTES}?${query}`
-    : protectedRoutes.MY_NOTES;
+    ? `${protectedRoutes.ALL_NOTES}?${query}`
+    : protectedRoutes.ALL_NOTES;
 }
 
 export function SidebarFolders() {
@@ -111,10 +111,10 @@ export function SidebarFolders() {
   }
 
   async function handleDeleteFolder(folder: FolderType) {
-    const confirmed = window.confirm(
-      `Delete "${folder.name}"? Notes inside will move to Uncategorized.`,
-    );
-    if (!confirmed) return;
+    // const confirmed = window.confirm(
+    //   `Delete "${folder.name}"? Notes inside will move to Uncategorized.`,
+    // );
+    // if (!confirmed) return;
 
     try {
       await deleteFolder.mutateAsync(folder.id);

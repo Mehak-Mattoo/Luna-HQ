@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { myNotesPath, notePath, protectedRoutes } from "@/app/routes";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Trash } from "lucide-react";
-import { NoteForm } from "@/components/helpers/NoteForm";
+import { NoteForm } from "@/components/pages/NoteForm";
 import {
   Dialog,
   DialogDescription,
@@ -31,6 +31,7 @@ import {
 } from "@/components/SummarizeDrawer";
 import { NoteChatPanel } from "@/components/NoteChatPanel";
 import { BUCKET, LUNA } from "@/lib/constants/constants";
+import { Skeleton } from "../ui/skeleton";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -143,8 +144,9 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6 text-muted-foreground">
-        Loading note…
+      <div className="mx-auto max-w-4xl px-4 flex flex-col gap-4 p-6">
+        <Skeleton className="h-14 w-[50vw]" />
+        <Skeleton className="h-88 w-[50vw]" />
       </div>
     );
   }
@@ -153,7 +155,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
         <p>Failed to load notes.</p>
-        <Link href={protectedRoutes.MY_NOTES}>Back</Link>
+        <Link href={protectedRoutes.ALL_NOTES}>Back</Link>
       </div>
     );
   }
@@ -162,7 +164,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6">
         <p>Note not found.</p>
-        <Link href={protectedRoutes.MY_NOTES}>Back</Link>
+        <Link href={protectedRoutes.ALL_NOTES}>Back</Link>
       </div>
     );
   }
@@ -170,7 +172,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const backHref = myNotesPath(note.folder_id);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="px-10 py-5">
       <Link
         href={backHref}
         className="mb-6 flex items-center gap-2 text-lg text-muted-foreground"
@@ -181,10 +183,10 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="mt-4 font-semibold">{note.title}</h1>
-          <p className="mt-1 text-muted-foreground">
+          <h2 className="mt-4 font-semibold">{note.title}</h2>
+          <h6 className="mt-1 text-muted-foreground">
             {new Date(note.created_at).toLocaleString()}
-          </p>
+          </h6>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setOpenEditDialog(true)}>
@@ -206,7 +208,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
         <img
           src={attachmentUrl}
           alt={note.attachment_name ?? "Attachment"}
-          className="mt-4 max-h-96 rounded-lg border object-contain"
+          className="mt-4 max-h-80 rounded-lg border object-contain"
         />
       )}
 

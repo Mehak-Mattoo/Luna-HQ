@@ -29,9 +29,7 @@ export function NewFolder({ open, onOpenChange, folder }: NewFolderProps) {
   const updateFolder = useUpdateFolder();
   const [folderName, setFolderName] = useState("");
 
-  const isPending = isRename
-    ? updateFolder.isPending
-    : createFolder.isPending;
+  const isPending = isRename ? updateFolder.isPending : createFolder.isPending;
 
   useEffect(() => {
     if (open) {
@@ -56,19 +54,15 @@ export function NewFolder({ open, onOpenChange, folder }: NewFolderProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <form onSubmit={handleSubmit}>
-        <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm">
+        <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
               {isRename ? "Rename folder" : "New folder"}
             </DialogTitle>
-            <DialogDescription>
-              {isRename
-                ? "Update the folder name."
-                : "Create a new folder to organize your notes."}
-            </DialogDescription>
+          
           </DialogHeader>
-          <FieldGroup>
+          <FieldGroup className="py-4">
             <Field>
               <Label htmlFor="folder-name">Folder name</Label>
               <Input
@@ -96,8 +90,8 @@ export function NewFolder({ open, onOpenChange, folder }: NewFolderProps) {
               )}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </form>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }

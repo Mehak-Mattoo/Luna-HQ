@@ -37,10 +37,7 @@ import { getInitials } from "@/lib/constants/constants";
 import { Suspense } from "react";
 import { SidebarFolders } from "@/components/sidebar/SidebarFolders";
 
-const navItems = [
-  { label: "Home", icon: Home, href: protectedRoutes.HOME },
-  { label: "All notes", icon: StickyNote, href: protectedRoutes.MY_NOTES },
-];
+const navItems = [{ label: "Home", icon: Home, href: protectedRoutes.HOME }];
 
 interface AppSidebarProps {
   email: string;
@@ -130,7 +127,7 @@ export function AppSidebar({ email, name, avatar }: AppSidebarProps) {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
-                  className="flex cursor-pointer items-center gap-2 text-destructive focus:text-destructive"
+                  className="flex cursor-pointer items-center gap-2 text-destructive "
                   onClick={handleSignOut}
                 >
                   <LogOut className="size-4" />
