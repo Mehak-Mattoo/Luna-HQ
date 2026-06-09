@@ -25,13 +25,13 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useSummarizeNote } from "@/hooks/useSummarizeNote";
-import {
-  SummarizeDrawer,
-  summarizeButtonLabel,
-} from "@/components/SummarizeDrawer";
+import { useSummarizeFolder } from "@/hooks/useSummarizeFolder";
+import { useFolders } from "@/hooks/useFolders";
+import { SummarizeDrawer } from "@/components/SummarizeDrawer";
 import { NoteChatPanel } from "@/components/NoteChatPanel";
-import { BUCKET, LUNA } from "@/lib/constants/constants";
+import { BUCKET } from "@/lib/constants/constants";
 import { Skeleton } from "../ui/skeleton";
+import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -51,26 +51,38 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
+  const [summaryTitle, setSummaryTitle] = useState("");
+  const [summaryMode, setSummaryMode] = useState<"note" | "folder">("note");
   const [chatOpen, setChatOpen] = useState(false);
 
   const note = notes?.find((n) => String(n.id) === noteId);
+  const { data: folders = [] } = useFolders();
   const summarizeMutation = useSummarizeNote();
+  const summarizeFolderMutation = useSummarizeFolder();
+
+  const parentFolder =
+    note?.folder_id != null
+      ? (folders.find((f) => f.id === note.folder_id) ?? null)
+      : null;
 
   useEffect(() => {
     summarizeMutation.reset();
+    summarizeFolderMutation.reset();
     setSummaryDrawerOpen(false);
+    setSummaryTitle("");
+    setSummaryMode("note");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when navigating to another note
   }, [noteId]);
 
   useEffect(() => {
     if (!note) return;
 
-    const canonical = notePath(note);
+    const path = notePath(note);
     const currentPath =
       typeof window !== "undefined" ? window.location.pathname : "";
 
-    if (currentPath !== canonical) {
-      router.replace(canonical);
+    if (currentPath !== path) {
+      router.replace(path);
     }
   }, [note, router]);
 
@@ -134,13 +146,33 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     }
   };
 
-  function handleSummarizeClick() {
+  function handleSummarizeNote() {
     if (!note) return;
 
+    summarizeFolderMutation.reset();
     summarizeMutation.reset();
+    setSummaryMode("note");
+    setSummaryTitle(note.title);
     setSummaryDrawerOpen(true);
     summarizeMutation.mutate(note);
   }
+
+  function handleSummarizeWorkspace() {
+    if (!note?.folder_id || !parentFolder) return;
+
+    summarizeMutation.reset();
+    summarizeFolderMutation.reset();
+    setSummaryMode("folder");
+    setSummaryTitle(parentFolder.name);
+    setSummaryDrawerOpen(true);
+    summarizeFolderMutation.mutate(note.folder_id);
+  }
+
+  const isLoadingSummary =
+    summarizeMutation.isPending || summarizeFolderMutation.isPending;
+
+  const activeSummary =
+    summaryMode === "folder" ? summarizeFolderMutation : summarizeMutation;
 
   if (isLoading) {
     return (
@@ -170,6 +202,31 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   }
 
   const backHref = myNotesPath(note.folder_id);
+
+  const lunaOptions: LunaActionOption[] = [
+    {
+      id: "summarize-note",
+      label: "Summarize note",
+      onClick: handleSummarizeNote,
+      disabled: isLoadingSummary,
+    },
+    ...(parentFolder
+      ? [
+          {
+            id: "summarize-workspace",
+            label: "Summarize all notes in folder",
+            onClick: handleSummarizeWorkspace,
+            disabled: isLoadingSummary,
+          } satisfies LunaActionOption,
+        ]
+      : []),
+    {
+      id: "ask-luna",
+      label: "Ask Luna",
+      onClick: () => setChatOpen(true),
+      disabled: isLoadingSummary,
+    },
+  ];
 
   return (
     <div className="px-10 py-5">
@@ -271,28 +328,19 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
         onCancel={() => setOpenEditDialog(false)}
       />
 
-      <div className="absolute bottom-5 right-5 flex gap-2">
-        <Button variant="outline" size="lg" onClick={() => setChatOpen(true)}>
-          {`Ask ${LUNA}`}
-        </Button>
-        <Button
-          onClick={handleSummarizeClick}
-          disabled={summarizeMutation.isPending}
-          size="lg"
-        >
-          {summarizeButtonLabel(note, summarizeMutation.isPending)}
-        </Button>
+      <div className="absolute bottom-5 right-5">
+        <LunaButton options={lunaOptions} isBusy={isLoadingSummary} />
       </div>
 
       <NoteChatPanel note={note} open={chatOpen} onOpenChange={setChatOpen} />
 
       <SummarizeDrawer
-        title={note.title}
+        title={summaryTitle || note.title}
         open={summaryDrawerOpen}
         onOpenChange={setSummaryDrawerOpen}
-        summary={summarizeMutation.data}
-        error={summarizeMutation.error?.message ?? null}
-        isPending={summarizeMutation.isPending}
+        summary={activeSummary.data}
+        error={activeSummary.error?.message ?? null}
+        isPending={activeSummary.isPending}
       />
     </div>
   );

@@ -127,7 +127,6 @@ const NotesPage = () => {
     setOpenDialog(true);
   }
 
-
   const summarizeFolder = useSummarizeFolder();
 
   function handleSummarizeFolder() {
@@ -150,7 +149,7 @@ const NotesPage = () => {
         </div>
 
         <Button onClick={handleCreateClick} size="lg">
-          {activeFolder ? "Add note to folder" : "Add Note"}
+          {activeFolder ? "Add note to workspace" : "Add Note"}
         </Button>
       </div>
 
@@ -214,21 +213,6 @@ const NotesPage = () => {
           }
         }}
       />
-
-      <div className="flex gap-2">
-        {activeFolder && notes.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={handleSummarizeFolder}
-            disabled={summarizeFolder.isPending}
-            size="lg"
-          >
-            {summarizeFolder.isPending ? "Summarizing..." : "Summarize folder"}
-          </Button>
-        )}
-
-      
-      </div>
 
       {activeFolder && (
         <SummarizeDrawer
