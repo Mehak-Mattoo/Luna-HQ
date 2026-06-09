@@ -205,7 +205,6 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     );
   }
 
-  const backHref = myNotesPath(note.folder_id);
 
   const lunaOptions: LunaActionOption[] = [
     {
@@ -234,13 +233,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   return (
     <div className="px-10 py-5">
-      <Link
-        href={backHref}
-        className="mb-6 flex items-center gap-2 text-lg text-muted-foreground"
-      >
-        <ArrowLeft />
-        Back
-      </Link>
+     
 
       <div className="flex items-center justify-between">
         <div>

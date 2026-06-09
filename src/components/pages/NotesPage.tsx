@@ -1,7 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ArrowRight,
+  ChevronRight,
+  FileText,
+  FolderOpen,
+  Paperclip,
+  Plus,
+  StickyNote,
+} from "lucide-react";
 
 import { NoteForm } from "@/components/pages/NoteForm";
 import { useNoteStore } from "@/lib/store";
@@ -15,11 +25,110 @@ import {
   useUploadNoteAttachment,
   type NoteFormPayload,
   useNotes,
+  type Note,
   type NotesFilter,
 } from "@/hooks/useNotes";
 import { useFolders } from "@/hooks/useFolders";
 import { useSummarizeFolder } from "@/hooks/useSummarizeFolder";
 import { SummarizeDrawer } from "../SummarizeDrawer";
+import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
+import { Skeleton } from "../ui/skeleton";
+import { cn } from "@/lib/utils";
+
+function formatNoteDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function NoteCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card py-3 px-6">
+      <div className="flex items-start justify-between gap-3">
+        <Skeleton className="h-5 w-2/3" />
+        <Skeleton className="h-4 w-20 shrink-0" />
+      </div>
+      <Skeleton className="mt-4 h-4 w-full" />
+      <Skeleton className="mt-2 h-4 w-4/5" />
+    </div>
+  );
+}
+
+type NoteCardProps = {
+  note: Note;
+  isSelected: boolean;
+  onClick: () => void;
+};
+
+function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
+  const hasAttachment = Boolean(note.attachment_path);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group w-full rounded-xl border bg-card  py-3 px-5 text-left",
+        " hover:border-primary/40 hover:shadow-md",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        isSelected
+          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+          : "border-border",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-full flex justify-between gap-1">
+            <p className="truncate font-semibold text-foreground">
+              {note.title}
+            </p>
+          </div>
+        </div>
+        <span className=" text-muted-foreground">
+          {formatNoteDate(note.created_at)}
+        </span>
+      </div>
+
+      <h6 className="mt-2 line-clamp-3 leading-relaxed text-muted-foreground">
+        {note.content}
+      </h6>
+
+      {hasAttachment && (
+        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+          <Paperclip className="size-3" />
+          Attachment
+        </div>
+      )}
+    </button>
+  );
+}
+
+function EmptyNotesState({
+  activeFolder,
+  onCreateClick,
+}: {
+  activeFolder: { name: string } | null;
+  onCreateClick: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-muted/40 px-6 py-16 text-center">
+      <h3 className="mt-5 text-lg font-semibold text-foreground">
+        {activeFolder ? "This folder is empty" : "No notes yet"}
+      </h3>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        {activeFolder
+          ? `Add your first note to "${activeFolder.name}" and it will show up here.`
+          : "Create your first note to start capturing ideas and organizing them into folders."}
+      </p>
+      <Button className="mt-6" size="lg" onClick={onCreateClick}>
+        <Plus className="size-4" />
+        {activeFolder ? "Add note to folder" : "Create your first note"}
+      </Button>
+    </div>
+  );
+}
 
 const NotesPage = () => {
   const router = useRouter();
@@ -136,63 +245,109 @@ const NotesPage = () => {
     summarizeFolder.mutate(activeFolder.id);
   }
 
-  const heading = activeFolder ? `${activeFolder.name}` : "Your notes";
+  const heading = activeFolder ? activeFolder.name : "Your notes";
+  const subheading = activeFolder
+    ? `${notes.length} ${notes.length === 1 ? "note" : "notes"} in this folder`
+    : `${notes.length} ${notes.length === 1 ? "note" : "notes"}`;
 
-  const subheading = activeFolder ? "Notes in this folder" : "All your notes";
+  const lunaOptions: LunaActionOption[] = activeFolder
+    ? [
+        {
+          id: "summarize-folder",
+          label: "Summarize folder",
+          onClick: handleSummarizeFolder,
+          disabled: summarizeFolder.isPending || notes.length === 0,
+        },
+      ]
+    : [];
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-foreground">{heading}</h2>
-          <p className="text-sm text-muted-foreground">{subheading}</p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden ">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/5 blur-3xl"
+        />
+
+        <div className="relative space-y-5">
+          {activeFolder && (
+            <nav
+              aria-label="Breadcrumb"
+              className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
+            >
+              <Link
+                href={protectedRoutes.ALL_NOTES}
+                className="transition-colors hover:text-foreground"
+              >
+                All notes
+              </Link>
+              <ChevronRight className="size-4 shrink-0" />
+              <span className="font-medium text-foreground">
+                {activeFolder.name}
+              </span>
+            </nav>
+          )}
+
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex items-start gap-4">
+              <div>
+                <h2 className=" font-bold tracking-tight text-foreground md:text-3xl">
+                  {heading}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground md:text-base">
+                  {isLoading ? "Loading your notes…" : subheading}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {activeFolder && notes.length > 0 && (
+                <LunaButton
+                  options={lunaOptions}
+                  isBusy={summarizeFolder.isPending}
+                />
+              )}
+              <Button onClick={handleCreateClick} size="lg">
+                <Plus className="size-4" />
+                 Add Note
+              </Button>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <Button onClick={handleCreateClick} size="lg">
-          {activeFolder ? "Add note to workspace" : "Add Note"}
-        </Button>
-      </div>
+      {submitError && (
+        <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {submitError}
+        </p>
+      )}
 
-      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-
-      <section className="bg-background">
+      <section>
         {isLoading ? (
-          <div className="rounded-3xl border border-dashed border-border bg-muted p-8 text-center text-sm text-muted-foreground">
-            Loading notes…
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <NoteCardSkeleton key={index} />
+            ))}
           </div>
         ) : isError ? (
-          <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
-            Failed to load notes. {`${error}`}
+          <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+            <p className="font-medium text-destructive">Failed to load notes</p>
+            <p className="mt-2 text-sm text-destructive/80">{`${error}`}</p>
           </div>
         ) : notes.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-border bg-muted p-8 text-center text-sm text-muted-foreground">
-            {activeFolder
-              ? "No notes in this folder yet. Create one to get started."
-              : "No notes yet. Create one to get started."}
-          </div>
+          <EmptyNotesState
+            activeFolder={activeFolder}
+            onCreateClick={handleCreateClick}
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {notes.map((note) => (
-              <button
+              <NoteCard
                 key={note.id}
-                type="button"
+                note={note}
+                isSelected={note.id === selectedNoteId}
                 onClick={() => router.push(notePath(note))}
-                className={`w-full cursor-pointer rounded-xl border px-4 py-3 text-left transition duration-150 ${
-                  note.id === selectedNoteId
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-background hover:border-primary/70 hover:bg-primary/5"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-foreground">{note.title}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(note.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="mt-2 line-clamp-2 text-muted-foreground">
-                  {note.content}
-                </p>
-              </button>
+              />
             ))}
           </div>
         )}

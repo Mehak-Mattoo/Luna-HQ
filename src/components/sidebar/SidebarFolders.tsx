@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   ChevronRight,
@@ -58,7 +58,7 @@ export function SidebarFolders() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeFolderId = searchParams.get("folder");
-
+  const router = useRouter();
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
   const { data: allNotes = [] } = useNotes("all");
 
@@ -246,7 +246,7 @@ export function SidebarFolders() {
 
       {notesByFolder.uncategorized.length > 0 && (
         <SidebarGroup>
-          <SidebarGroupLabel>Uncategorized</SidebarGroupLabel>
+          <SidebarGroupLabel  onClick={() => router.push(protectedRoutes.ALL_NOTES)} className="cursor-pointer">All Notes</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {notesByFolder.uncategorized.map((note) => (
