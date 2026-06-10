@@ -14,6 +14,7 @@ export interface Note {
   user_id: string;
   title: string;
   content: string;
+  is_favorite: boolean;
   attachment_path: string | null;
   attachment_name: string | null;
   attachment_mime: string | null;
@@ -75,6 +76,7 @@ export function useCreateNote() {
             content: newNote.content,
             folder_id: newNote.folder_id ?? null,
             user_id: user.id,
+            is_favorite: false,
           },
         ])
         .select();
@@ -100,6 +102,7 @@ export function useUpdateNote() {
           title: note.title,
           content: note.content,
           folder_id: note.folder_id ?? null,
+          is_favorite: note.is_favorite,
         })
         .eq("id", note.id)
         .select();

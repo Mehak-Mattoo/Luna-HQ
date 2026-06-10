@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Paperclip,
   Plus,
+  Slash,
   StickyNote,
 } from "lucide-react";
 
@@ -260,7 +261,7 @@ const NotesPage = () => {
     : [];
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 ">
       <section className="relative overflow-hidden ">
         <div
           aria-hidden
@@ -277,9 +278,9 @@ const NotesPage = () => {
                 href={protectedRoutes.ALL_NOTES}
                 className="transition-colors hover:text-foreground"
               >
-                All notes
+                My Folders
               </Link>
-              <ChevronRight className="size-4 shrink-0" />
+              <Slash className="size-3 shrink-0 -rotate-26" />
               <span className="font-medium text-foreground">
                 {activeFolder.name}
               </span>
@@ -299,12 +300,6 @@ const NotesPage = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {activeFolder && notes.length > 0 && (
-                <LunaButton
-                  options={lunaOptions}
-                  isBusy={summarizeFolder.isPending}
-                />
-              )}
               <Button onClick={handleCreateClick} size="lg">
                 <Plus className="size-4" />
                 Add Note
@@ -377,6 +372,15 @@ const NotesPage = () => {
           isPending={summarizeFolder.isPending}
         />
       )}
+
+      <div className="absolute bottom-5 right-5">
+        {activeFolder && notes.length > 0 && (
+          <LunaButton
+            options={lunaOptions}
+            isBusy={summarizeFolder.isPending}
+          />
+        )}
+      </div>
     </div>
   );
 };

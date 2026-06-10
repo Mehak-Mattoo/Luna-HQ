@@ -10,23 +10,12 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user?.email) {
-    redirect(authRoutes.LOGIN);
-  }
-
-  const profile = getProfileFromUser(data.user);
 
   return (
-    <div className="w-full">
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-8 ">
       <SidebarProvider>
-        <AppSidebar
-          email={profile.email}
-          name={profile.name}
-          avatar={profile.avatar}
-        />
+        <AppSidebar />
         <main className="flex flex-col flex-1 w-full ">
           <SidebarTrigger className="md:hidden" />
           {children}

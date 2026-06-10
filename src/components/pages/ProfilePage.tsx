@@ -124,7 +124,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8 ">
       {isLoading ? (
         <Skeleton className="h-[200px] w-[200px] " />
       ) : (

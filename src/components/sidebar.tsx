@@ -13,48 +13,16 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Home,
-  Settings,
-  Bell,
-  ChevronUp,
-  User,
-  LogOut,
-  StickyNote,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/client";
-import { authRoutes, protectedRoutes } from "@/components/helpers/routes";
-import { getInitials } from "@/components/helpers/constants";
+
+import { Home } from "lucide-react";
+import { protectedRoutes } from "@/components/helpers/routes";
 import { Suspense } from "react";
-import { SidebarFolders } from "@/components/sidebar/SidebarFolders";
+import { SidebarFolders } from "@/components/helpers/SidebarFolders";
 
 const navItems = [{ label: "Home", icon: Home, href: protectedRoutes.HOME }];
 
-interface AppSidebarProps {
-  email: string;
-  name?: string;
-  avatar?: string;
-}
-
-export function AppSidebar({ email, name, avatar }: AppSidebarProps) {
-  const router = useRouter();
-  const initials = getInitials(name ?? "");
+export function AppSidebar() {
   const { isMobile, setOpen } = useSidebar();
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push(authRoutes.LOGIN);
-  }
 
   return (
     <Sidebar
@@ -90,54 +58,6 @@ export function AppSidebar({ email, name, avatar }: AppSidebarProps) {
           <SidebarFolders />
         </Suspense>
       </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" tooltip={name}>
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={avatar} alt={name} />
-                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-1 flex-col gap-1 text-left">
-                    <span className="truncate font-semibold">{name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {email}
-                    </span>
-                  </div>
-                  <ChevronUp className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent side="top" align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={protectedRoutes.PROFILE}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <User className="size-4" />
-                    View Profile
-                  </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem
-                  className="flex cursor-pointer items-center gap-2 text-destructive "
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="size-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

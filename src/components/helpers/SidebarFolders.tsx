@@ -35,6 +35,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
   useDeleteFolder,
@@ -83,6 +84,10 @@ export function SidebarFolders() {
     if (!open) setEditingFolder(null);
   }
 
+  const favoriteNotes = useMemo(() => {
+    return allNotes.filter((note) => note.is_favorite);
+  }, [allNotes]);
+
   const notesByFolder = useMemo(() => {
     const map = new Map<string, typeof allNotes>();
     for (const folder of folders) {
@@ -111,10 +116,7 @@ export function SidebarFolders() {
   }
 
   async function handleDeleteFolder(folder: FolderType) {
-    // const confirmed = window.confirm(
-    //   `Delete "${folder.name}"? Notes inside will move to Uncategorized.`,
-    // );
-    // if (!confirmed) return;
+   
 
     try {
       await deleteFolder.mutateAsync(folder.id);
@@ -127,7 +129,36 @@ export function SidebarFolders() {
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel>Folders</SidebarGroupLabel>
+        <SidebarGroupLabel>Favorites</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {favoriteNotes.length === 0 ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled className="text-muted-foreground">
+                  No favorites yet
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : (
+              favoriteNotes.map((note) => (
+                <SidebarMenuItem key={note.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === notePath(note)}
+                  >
+                    <Link href={notePath(note)}>
+                      <FileText className="size-4" />
+                      <span className="truncate">{note.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))
+            )}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      <SidebarSeparator />
+      <SidebarGroup>
+        <SidebarGroupLabel>My Folders</SidebarGroupLabel>
         <SidebarGroupAction title="New folder" onClick={openCreateFolderDialog}>
           <Plus className="size-4" />
         </SidebarGroupAction>
@@ -136,7 +167,7 @@ export function SidebarFolders() {
             {foldersLoading ? (
               <SidebarMenuItem>
                 <SidebarMenuButton disabled>
-                  <span className="text-xs text-muted-foreground">
+                  <span className=" text-muted-foreground">
                     Loading folders…
                   </span>
                 </SidebarMenuButton>
@@ -227,7 +258,10 @@ export function SidebarFolders() {
                                 isActive={pathname === notePath(note)}
                               >
                                 <Link href={notePath(note)}>
-                                  <FileText className="size-3.5" />
+                                  <FileText
+                                    className="size-2"
+                                    fill="currentColor"
+                                  />
                                   <h6>{note.title}</h6>
                                 </Link>
                               </SidebarMenuSubButton>
@@ -243,10 +277,16 @@ export function SidebarFolders() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      <SidebarSeparator />
 
       {notesByFolder.uncategorized.length > 0 && (
-        <SidebarGroup>
-          <SidebarGroupLabel  onClick={() => router.push(protectedRoutes.ALL_NOTES)} className="cursor-pointer">All Notes</SidebarGroupLabel>
+        <SidebarGroup className="max-h-72 overflow-y-auto">
+          <SidebarGroupLabel
+            onClick={() => router.push(protectedRoutes.ALL_NOTES)}
+            className="cursor-pointer"
+          >
+            All Notes
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {notesByFolder.uncategorized.map((note) => (

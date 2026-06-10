@@ -17,7 +17,7 @@ import {
   protectedRoutes,
 } from "@/components/helpers/routes";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Trash } from "lucide-react";
+import { ArrowLeft, Edit, Edit2, Trash } from "lucide-react";
 import { NoteForm } from "@/components/pages/NoteForm";
 import {
   Dialog,
@@ -33,9 +33,17 @@ import { useSummarizeFolder } from "@/hooks/useSummarizeFolder";
 import { useFolders } from "@/hooks/useFolders";
 import { SummarizeDrawer } from "@/components/SummarizeDrawer";
 import { NoteChatPanel } from "@/components/NoteChatPanel";
-import { BUCKET } from "@/components/helpers/constants";
+import { BUCKET, formatUIFriendlyDate } from "@/components/helpers/constants";
 import { Skeleton } from "../ui/skeleton";
 import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "../ui/context-menu";
+import Navbar from "../helpers/Navbar";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -205,7 +213,6 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     );
   }
 
-
   const lunaOptions: LunaActionOption[] = [
     {
       id: "summarize-note",
@@ -232,113 +239,127 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   ];
 
   return (
-    <div className="px-10 py-5">
-     
+    <>
+      <Navbar note={note} />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="relative min-h-[calc(100vh-4rem)] ">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h2 className="mt-4 font-medium!">{note.title}</h2>
+                <h6 className="mt-1 text-muted-foreground">
+                  Created {formatUIFriendlyDate(note.created_at)}
+                </h6>
+                {/* <h6 className="mt-1 text-muted-foreground">Last modified {new Date(note.updated_at ?? "").toLocaleString()}</h6> */}
+              </div>
+            </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="mt-4 font-semibold">{note.title}</h2>
-          <h6 className="mt-1 text-muted-foreground">
-            {new Date(note.created_at).toLocaleString()}
-          </h6>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOpenEditDialog(true)}>
-            <Edit />
-          </Button>
-          <Button
-            variant="outline"
-            className="cursor-pointer"
+            <p className="mt-6 whitespace-pre-wrap">{note.content}</p>
+
+            {attachmentUrl && note.attachment_mime?.startsWith("image/") && (
+              <img
+                src={attachmentUrl}
+                alt={note.attachment_name ?? "Attachment"}
+                className="mt-4 max-h-80 rounded-lg border object-contain"
+              />
+            )}
+
+            {attachmentUrl && (
+              <Button
+                onClick={() => window.open(attachmentUrl, "_blank")}
+                className="mt-2 inline-block"
+              >
+                Open {note.attachment_name}
+              </Button>
+            )}
+
+            {submitError && (
+              <p className="mt-4 text-sm text-destructive" role="alert">
+                {submitError}
+              </p>
+            )}
+
+            {openDeleteDialog && (
+              <Dialog
+                open={openDeleteDialog}
+                onOpenChange={setOpenDeleteDialog}
+              >
+                <DialogContent showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle>Delete this note?</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. The note will be permanently
+                      deleted.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+
+                    <Button
+                      variant="destructive"
+                      disabled={deleteNote.isPending}
+                      onClick={() => {
+                        deleteNote.mutate(String(note.id), {
+                          onSuccess: () => {
+                            setOpenDeleteDialog(false);
+                            router.push(myNotesPath(note.folder_id));
+                          },
+                        });
+                      }}
+                    >
+                      {deleteNote.isPending ? "Deleting..." : "Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            <NoteForm
+              key={String(note.id)}
+              openDialog={openEditDialog}
+              note={note}
+              isSaving={updateNote.isPending || uploadAttachment.isPending}
+              onSubmit={handleUpdateNote}
+              onCancel={() => setOpenEditDialog(false)}
+            />
+
+            <div className="absolute bottom-5 right-5">
+              <LunaButton options={lunaOptions} isBusy={isLoadingSummary} />
+            </div>
+
+            <NoteChatPanel
+              note={note}
+              open={chatOpen}
+              onOpenChange={setChatOpen}
+            />
+          </div>
+        </ContextMenuTrigger>
+
+        <ContextMenuContent className="w-56">
+          <ContextMenuItem onClick={() => setOpenEditDialog(true)}>
+            <Edit2 /> Edit
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            variant="destructive"
             onClick={() => setOpenDeleteDialog(true)}
           >
-            <Trash className="text-red-300" />
-          </Button>
-        </div>
-      </div>
+            <Trash /> Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
 
-      <p className="mt-6 whitespace-pre-wrap">{note.content}</p>
-
-      {attachmentUrl && note.attachment_mime?.startsWith("image/") && (
-        <img
-          src={attachmentUrl}
-          alt={note.attachment_name ?? "Attachment"}
-          className="mt-4 max-h-80 rounded-lg border object-contain"
+        <SummarizeDrawer
+          title={summaryTitle || note.title}
+          open={summaryDrawerOpen}
+          onOpenChange={setSummaryDrawerOpen}
+          summary={activeSummary.data}
+          error={activeSummary.error?.message ?? null}
+          isPending={activeSummary.isPending}
         />
-      )}
-
-      {attachmentUrl && (
-        <Button
-          onClick={() => window.open(attachmentUrl, "_blank")}
-          className="mt-2 inline-block"
-        >
-          Open {note.attachment_name}
-        </Button>
-      )}
-
-      {submitError && (
-        <p className="mt-4 text-sm text-destructive" role="alert">
-          {submitError}
-        </p>
-      )}
-
-      {openDeleteDialog && (
-        <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-          <DialogContent showCloseButton={false}>
-            <DialogHeader>
-              <DialogTitle>Delete this note?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. The note will be permanently
-                deleted.
-              </DialogDescription>
-            </DialogHeader>
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-
-              <Button
-                variant="destructive"
-                disabled={deleteNote.isPending}
-                onClick={() => {
-                  deleteNote.mutate(String(note.id), {
-                    onSuccess: () => {
-                      setOpenDeleteDialog(false);
-                      router.push(myNotesPath(note.folder_id));
-                    },
-                  });
-                }}
-              >
-                {deleteNote.isPending ? "Deleting..." : "Delete"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <NoteForm
-        key={String(note.id)}
-        openDialog={openEditDialog}
-        note={note}
-        isSaving={updateNote.isPending || uploadAttachment.isPending}
-        onSubmit={handleUpdateNote}
-        onCancel={() => setOpenEditDialog(false)}
-      />
-
-      <div className="absolute bottom-5 right-5">
-        <LunaButton options={lunaOptions} isBusy={isLoadingSummary} />
-      </div>
-
-      <NoteChatPanel note={note} open={chatOpen} onOpenChange={setChatOpen} />
-
-      <SummarizeDrawer
-        title={summaryTitle || note.title}
-        open={summaryDrawerOpen}
-        onOpenChange={setSummaryDrawerOpen}
-        summary={activeSummary.data}
-        error={activeSummary.error?.message ?? null}
-        isPending={activeSummary.isPending}
-      />
-    </div>
+      </ContextMenu>
+    </>
   );
 }

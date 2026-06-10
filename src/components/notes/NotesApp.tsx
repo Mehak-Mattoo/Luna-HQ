@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { NoteForm } from "@/components/notes/NoteForm";
 import {
   useCreateNote,
   useDeleteNote,
@@ -17,6 +16,7 @@ import { apiRoutes, protectedRoutes } from "@/app/routes";
 import { supabase } from "@/lib/supabase";
 import { generateText } from "ai";
 import { Button } from "../ui/button";
+import { NoteForm } from "../pages/NoteForm";
 
 export type { NoteFormPayload };
 

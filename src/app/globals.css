@@ -83,6 +83,28 @@ label {
   font-weight: 500;
 }
 
+/* Entire scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 4px;
+}
+
+/* Scrollbar track */
+::-webkit-scrollbar-track {
+  background: #7d7c7c;
+}
+
+/* Scrollbar thumb */
+::-webkit-scrollbar-thumb {
+  background: #292424;
+  border-radius: 0px;
+}
+
+/* Thumb on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #554b4b;
+}
+
 @media screen and (max-width: 1200px) {
   h1 {
     font-size: 38px; /* 87.5% of original */

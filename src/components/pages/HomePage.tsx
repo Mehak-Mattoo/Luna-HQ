@@ -82,7 +82,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8  ">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8  ">
       <section className="space-y-4">
         <div className="text-center flex flex-col items-center gap-2 mb-10">
           <h1 className=" font-medium text-muted-foreground">
