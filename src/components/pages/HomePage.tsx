@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  FileText,
-  FolderPlus,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, FileText, FolderPlus, Sparkles } from "lucide-react";
 
 import { NewFolder } from "@/components/modals/NewFolder";
 import { Button } from "@/components/ui/button";
@@ -141,11 +136,10 @@ export default function HomePage() {
 
         <Card className="border-primary/15 bg-primary/5">
           <CardHeader>
-           
             <CardTitle className="text-lg font-semibold">Meet {LUNA}</CardTitle>
             <CardDescription className="leading-relaxed">
-              Open any note and hover over the {LUNA} button to summarize or
-              ask questions about what you wrote.
+              Open any note and hover over the {LUNA} button to summarize or ask
+              questions about what you wrote.
             </CardDescription>
           </CardHeader>
         </Card>

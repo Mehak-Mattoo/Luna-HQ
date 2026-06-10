@@ -134,7 +134,7 @@ const NotesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const folderId = searchParams.get("folder");
-  const shouldOpenCreate = searchParams.get("create") === "1";
+  const shouldOpenCreate = searchParams.get("create");
 
   const notesFilter: NotesFilter = folderId ?? "all";
   const { data: notes = [], isLoading, isError, error } = useNotes(notesFilter);
@@ -246,9 +246,7 @@ const NotesPage = () => {
   }
 
   const heading = activeFolder ? activeFolder.name : "Your notes";
-  const subheading = activeFolder
-    ? `${notes.length} ${notes.length === 1 ? "note" : "notes"} in this folder`
-    : `${notes.length} ${notes.length === 1 ? "note" : "notes"}`;
+  const subheading = `${notes.length} ${notes.length === 1 ? "note" : "notes"}`;
 
   const lunaOptions: LunaActionOption[] = activeFolder
     ? [
@@ -291,10 +289,10 @@ const NotesPage = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex items-start gap-4">
               <div>
-                <h2 className=" font-bold tracking-tight text-foreground md:text-3xl">
+                <h2 className=" font-bold tracking-tight text-foreground ">
                   {heading}
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground md:text-base">
+                <p className="mt-1 text-muted-foreground md:text-base">
                   {isLoading ? "Loading your notes…" : subheading}
                 </p>
               </div>
@@ -309,7 +307,7 @@ const NotesPage = () => {
               )}
               <Button onClick={handleCreateClick} size="lg">
                 <Plus className="size-4" />
-                 Add Note
+                Add Note
               </Button>
             </div>
           </div>
@@ -317,7 +315,7 @@ const NotesPage = () => {
       </section>
 
       {submitError && (
-        <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive">
           {submitError}
         </p>
       )}
@@ -332,7 +330,7 @@ const NotesPage = () => {
         ) : isError ? (
           <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8 text-center">
             <p className="font-medium text-destructive">Failed to load notes</p>
-            <p className="mt-2 text-sm text-destructive/80">{`${error}`}</p>
+            <p className="mt-2 text-destructive/80">{`${error}`}</p>
           </div>
         ) : notes.length === 0 ? (
           <EmptyNotesState
