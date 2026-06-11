@@ -35,14 +35,8 @@ import { SummarizeDrawer } from "../SummarizeDrawer";
 import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatUIFriendlyDate } from "../helpers/constants";
 
-function formatNoteDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 function NoteCardSkeleton() {
   return (
@@ -51,8 +45,6 @@ function NoteCardSkeleton() {
         <Skeleton className="h-5 w-2/3" />
         <Skeleton className="h-4 w-20 shrink-0" />
       </div>
-      <Skeleton className="mt-4 h-4 w-full" />
-      <Skeleton className="mt-2 h-4 w-4/5" />
     </div>
   );
 }
@@ -88,7 +80,7 @@ function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
           </div>
         </div>
         <span className=" text-muted-foreground">
-          {formatNoteDate(note.created_at)}
+          {formatUIFriendlyDate(note.created_at)}
         </span>
       </div>
 
@@ -261,7 +253,7 @@ const NotesPage = () => {
     : [];
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 ">
+    <div className="flex flex-col gap-8">
       <section className="relative overflow-hidden ">
         <div
           aria-hidden
@@ -269,25 +261,7 @@ const NotesPage = () => {
         />
 
         <div className="relative space-y-5">
-          {activeFolder && (
-            <nav
-              aria-label="Breadcrumb"
-              className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
-            >
-              <Link
-                href={protectedRoutes.ALL_NOTES}
-                className="transition-colors hover:text-foreground"
-              >
-                My Folders
-              </Link>
-              <Slash className="size-3 shrink-0 -rotate-26" />
-              <span className="font-medium text-foreground">
-                {activeFolder.name}
-              </span>
-            </nav>
-          )}
-
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-4">
               <div>
                 <h2 className=" font-bold tracking-tight text-foreground ">

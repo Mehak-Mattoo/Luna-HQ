@@ -19,6 +19,7 @@ export interface Note {
   attachment_name: string | null;
   attachment_mime: string | null;
   folder_id: string | null;
+  folder_name: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -59,6 +60,7 @@ export function useCreateNote() {
       title: string;
       content: string;
       folder_id?: string | null;
+      folder_name?: string | null;
     }) => {
       const {
         data: { user },
@@ -77,6 +79,7 @@ export function useCreateNote() {
             folder_id: newNote.folder_id ?? null,
             user_id: user.id,
             is_favorite: false,
+            folder_name: newNote.folder_name ?? null,
           },
         ])
         .select();
@@ -102,6 +105,7 @@ export function useUpdateNote() {
           title: note.title,
           content: note.content,
           folder_id: note.folder_id ?? null,
+          folder_name: note.folder_name ?? null,
           is_favorite: note.is_favorite,
         })
         .eq("id", note.id)

@@ -43,7 +43,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../ui/context-menu";
-import Navbar from "../helpers/Navbar";
+import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -186,9 +186,11 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const activeSummary =
     summaryMode === "folder" ? summarizeFolderMutation : summarizeMutation;
 
+  useSetNavbarNote(note);
+
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4">
         <Skeleton className="h-14 w-[50vw]" />
         <Skeleton className="h-88 w-[50vw]" />
       </div>
@@ -197,7 +199,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   if (isError) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div>
         <p>Failed to load notes.</p>
         <Link href={protectedRoutes.ALL_NOTES}>Back</Link>
       </div>
@@ -206,7 +208,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   if (!note) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6">
+      <div>
         <p>Note not found.</p>
         <Link href={protectedRoutes.ALL_NOTES}>Back</Link>
       </div>
@@ -240,10 +242,9 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   return (
     <>
-      <Navbar note={note} />
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className="relative min-h-[calc(100vh-4rem)] ">
+          <div className="relative min-h-[50vh]">
             <div className="flex items-center justify-between border-b pb-4">
               <div>
                 <h2 className="mt-4 font-medium!">{note.title}</h2>

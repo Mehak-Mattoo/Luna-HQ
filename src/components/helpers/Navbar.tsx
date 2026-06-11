@@ -1,42 +1,59 @@
 "use client";
-import { Note, useUpdateNote } from "@/hooks/useNotes";
-import { ChevronUp, Heart, LogOut, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ChevronUp, Heart, LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { AvatarImage } from "../ui/avatar";
-import { SidebarMenuButton } from "../ui/sidebar";
+import { getInitials } from "./constants";
+import { authRoutes, myNotesPath, protectedRoutes } from "./routes";
+import { Note, useUpdateNote } from "@/hooks/useNotes";
+import { getProfileFromUser } from "@/lib/profileUtils";
+import { supabase } from "@/lib/supabase";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { getInitials } from "./constants";
-import { authRoutes, protectedRoutes } from "./routes";
-import { createClient } from "@/lib/client";
-import { redirect, useRouter } from "next/navigation";
-import { getProfileFromUser } from "@/lib/profileUtils";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { Button } from "../ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { useFolders } from "@/hooks/useFolders";
 
 type NavbarProps = {
-  note: Note;
+  note?: Note;
 };
 
 const Navbar = ({ note }: NavbarProps) => {
-  const [isFavorite, setIsFavorite] = useState(note.is_favorite);
+  const [isFavorite, setIsFavorite] = useState(note?.is_favorite ?? false);
   const router = useRouter();
   const updateNote = useUpdateNote();
   const [profile, setProfile] = useState({ name: "", email: "", avatar: "" });
 
+  const { data: folders = [] } = useFolders();
+  const parentFolder = note?.folder_id
+    ? (folders.find((f) => f.id === note.folder_id) ?? null)
+    : null;
+
   useEffect(() => {
-    const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setProfile(getProfileFromUser(user));
     });
   }, []);
+
+  useEffect(() => {
+    setIsFavorite(note?.is_favorite ?? false);
+  }, [note?.id, note?.is_favorite]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -44,58 +61,109 @@ const Navbar = ({ note }: NavbarProps) => {
   };
 
   const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    if (!note) return;
+
+    const nextFavorite = !note.is_favorite;
+    setIsFavorite(nextFavorite);
+
     updateNote.mutate(
       {
         ...note,
-        is_favorite: !note.is_favorite,
+        is_favorite: nextFavorite,
       },
       {
         onSuccess: () => {
           toast.success(
-            `${note.is_favorite ? "Removed from" : "Added to"} Favorites`,
+            `${nextFavorite ? "Added to" : "Removed from"} Favorites`,
           );
         },
         onError: () => {
           toast.error("Failed to update note");
+          setIsFavorite(note.is_favorite);
         },
       },
     );
   };
+
+  const isExactHomePath = usePathname() === protectedRoutes.HOME;
+
   return (
-    <div className="absolute top-0 right-0 z-50 p-1 flex items-center justify-between bg-background/50 backdrop-blur-sm">
+    <div className="w-full flex items-center justify-between gap-2">
       <div className="flex items-center gap-2">
-        <h2 className="mt-4 font-medium!">{}</h2>
+        <Breadcrumb>
+          <BreadcrumbList>
+            {!isExactHomePath && (
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={protectedRoutes.HOME}>Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            )}
+
+            {parentFolder && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={myNotesPath(parentFolder.id)}>
+                      {parentFolder.name}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            {note && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{note.title}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
-      <div className="flex items-center gap-2">
-        <Heart
-          className="cursor-pointer size-6"
-          onClick={() => handleFavorite()}
-          fill={isFavorite ? "white" : "none"}
-        />
+
+      <div className="flex items-center">
+        {note && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleFavorite}
+            aria-label={
+              isFavorite ? "Remove from favorites" : "Add to favorites"
+            }
+          >
+            <Heart
+              className="size-5"
+              fill={isFavorite ? "currentColor" : "none"}
+            />
+          </Button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" tooltip={note.title}>
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={profile.avatar} alt={note.title} />
+            <Button variant="ghost" className="h-10 gap-2 px-2">
+              <Avatar className="size-8 rounded-lg">
+                <AvatarImage src={profile.avatar} alt={profile.name} />
                 <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                  {getInitials(note.title)}
+                  {getInitials(profile.name || profile.email)}
                 </AvatarFallback>
               </Avatar>
-
-              <ChevronUp className="ml-auto size-4" />
-            </SidebarMenuButton>
+              {/* <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
+                {profile.name || profile.email}
+              </span> */}
+              <ChevronUp className="size-4 text-muted-foreground" />
+            </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent side="top" align="end" className="w-56">
-            <DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem disabled className="text-muted-foreground">
               {profile.name}
-              {/* <span className="truncate text-xs text-muted-foreground">
-                {profile.email}
-              </span> */}
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
               <Link
                 href={protectedRoutes.PROFILE}
                 className="flex cursor-pointer items-center gap-2"
@@ -103,11 +171,9 @@ const Navbar = ({ note }: NavbarProps) => {
                 View Profile
               </Link>
             </DropdownMenuItem>
-
             <DropdownMenuSeparator />
-
             <DropdownMenuItem
-              className="flex cursor-pointer items-center gap-2 text-destructive "
+              className="text-destructive focus:text-destructive"
               onClick={handleSignOut}
             >
               <LogOut className="size-4" />
