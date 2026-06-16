@@ -17,8 +17,7 @@ import {
   protectedRoutes,
 } from "@/components/helpers/routes";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Edit2, Trash } from "lucide-react";
-import { NoteForm } from "@/components/pages/NoteForm";
+import { ArrowLeft, Edit, Edit2, Plus, Trash } from "lucide-react";
 import {
   Dialog,
   DialogDescription,
@@ -44,6 +43,7 @@ import {
   ContextMenuTrigger,
 } from "../ui/context-menu";
 import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
+import { Input } from "../ui/input";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -53,7 +53,6 @@ type NoteDetailPageProps = {
 export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const router = useRouter();
 
-  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const { data: notes = [], isLoading, isError } = useNotes();
@@ -192,6 +191,28 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     summarizeFolderMutation.mutate(note.folder_id);
   }
 
+
+  async function handleAttachmentUpload(selectedFile: File) {
+    if (!note) return;
+    setSubmitError(null);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      await uploadAttachment.mutateAsync({
+        file: selectedFile,
+        noteId: note.id,
+        userId: user.id,
+      });
+      // notes query refetches → attachmentUrl updates via useEffect
+    } catch {
+      setSubmitError("Failed to upload attachment.");
+    }
+  }
+
   const isLoadingSummary =
     summarizeMutation.isPending || summarizeFolderMutation.isPending;
 
@@ -289,6 +310,27 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
               </div>
             </div>
 
+            <div>
+              <label
+                htmlFor="note-attachment"
+                className="inline-flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Plus className="size-4" />
+                Add attachment
+              </label>
+              <Input
+                id="note-attachment"
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0];
+                  if (selected) void handleAttachmentUpload(selected);
+                  e.target.value = ""; // allow re-uploading same file
+                }}
+              />
+            </div>
+
             <p
               contentEditable
               suppressContentEditableWarning
@@ -373,15 +415,6 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
                 </DialogContent>
               </Dialog>
             )}
-
-            <NoteForm
-              key={String(note.id)}
-              openDialog={openEditDialog}
-              note={note}
-              isSaving={updateNote.isPending || uploadAttachment.isPending}
-              onSubmit={handleUpdateNote}
-              onCancel={() => setOpenEditDialog(false)}
-            />
 
             <div className="absolute bottom-5 right-5">
               <LunaButton options={lunaOptions} isBusy={isLoadingSummary} />

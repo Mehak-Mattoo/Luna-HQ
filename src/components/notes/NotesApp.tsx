@@ -16,7 +16,6 @@ import { apiRoutes, protectedRoutes } from "@/app/routes";
 import { supabase } from "@/lib/supabase";
 import { generateText } from "ai";
 import { Button } from "../ui/button";
-import { NoteForm } from "../pages/NoteForm";
 
 export type { NoteFormPayload };
 
@@ -160,18 +159,7 @@ export function NotesApp() {
           )}
         </section>
 
-        <NoteForm
-          openDialog={openDialog}
-          key={selectedNote?.id ?? "new"}
-          note={selectedNote}
-          isSaving={isSaving}
-          onSubmit={handleSubmit}
-          onDelete={selectedNote ? handleDelete : undefined}
-          onCancel={() => {
-            setSubmitError(null);
-            setOpenDialog(false);
-          }}
-        />
+      
       </>
     </div>
   );

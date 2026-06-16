@@ -1,20 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowRight,
-  ChevronRight,
-  FileText,
-  FolderOpen,
-  Paperclip,
-  Plus,
-  Slash,
-  StickyNote,
-} from "lucide-react";
-
-import { NoteForm } from "@/components/pages/NoteForm";
+import { Paperclip, Plus, Slash, StickyNote } from "lucide-react";
 import { useNoteStore } from "@/lib/store";
 import { notePath, protectedRoutes } from "@/components/helpers/routes";
 import { supabase } from "@/lib/supabase";
@@ -36,7 +24,6 @@ import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatUIFriendlyDate } from "../helpers/constants";
-
 
 function NoteCardSkeleton() {
   return (
@@ -223,10 +210,14 @@ const NotesPage = () => {
     });
   }
 
-  function handleCreateClick() {
-    setSelectedNoteId(null);
-    setSubmitError(null);
-    setOpenDialog(true);
+  async function handleCreateClick() {
+    const createdNote = await createNote.mutateAsync({
+      title: "Untitled",
+      content: "",
+      folder_id: folderId,
+    });
+    console.log(createdNote);
+    router.push(notePath(createdNote[0]));
   }
 
   const summarizeFolder = useSummarizeFolder();
@@ -264,9 +255,7 @@ const NotesPage = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-4">
               <div>
-                <h3 className=" tracking-tight text-foreground ">
-                  {heading}
-                </h3>
+                <h3 className=" tracking-tight text-foreground ">{heading}</h3>
                 <h6 className="mt-1 text-muted-foreground md:text-base">
                   {isLoading ? "Loading your notes…" : subheading}
                 </h6>
@@ -276,7 +265,7 @@ const NotesPage = () => {
             <div className="flex flex-wrap items-center gap-2">
               <Button onClick={handleCreateClick}>
                 <Plus className="size-4" />
-                Add Note
+                Add
               </Button>
             </div>
           </div>
@@ -319,22 +308,6 @@ const NotesPage = () => {
           </div>
         )}
       </section>
-
-      <NoteForm
-        openDialog={openDialog}
-        key={selectedNote?.id ?? `new-${folderId ?? "all"}`}
-        note={selectedNote}
-        isSaving={isSaving}
-        onSubmit={handleSubmit}
-        onDelete={selectedNote ? handleDelete : undefined}
-        onCancel={() => {
-          setSubmitError(null);
-          setOpenDialog(false);
-          if (shouldOpenCreate && folderId) {
-            router.replace(`${protectedRoutes.ALL_NOTES}?folder=${folderId}`);
-          }
-        }}
-      />
 
       {activeFolder && (
         <SummarizeDrawer
