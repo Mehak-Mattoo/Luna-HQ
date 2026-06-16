@@ -106,7 +106,7 @@ export function NotesApp() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className=" text-foreground">Your notes</h2>
+          <h3 className=" text-foreground">Your notes</h3>
         </div>
 
         <Button onClick={handleCreateClick} size="lg">

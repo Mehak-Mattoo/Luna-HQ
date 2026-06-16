@@ -67,6 +67,11 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const [summaryMode, setSummaryMode] = useState<"note" | "folder">("note");
   const [chatOpen, setChatOpen] = useState(false);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
   const note = notes?.find((n) => String(n.id) === noteId);
   const { data: folders = [] } = useFolders();
   const summarizeMutation = useSummarizeNote();
@@ -76,6 +81,13 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     note?.folder_id != null
       ? (folders.find((f) => f.id === note.folder_id) ?? null)
       : null;
+
+  useEffect(() => {
+    if (!note) return;
+    setTitle(note.title);
+    setContent(note.content);
+    setFile(null);
+  }, [note?.id, note?.title, note?.content]);
 
   useEffect(() => {
     summarizeMutation.reset();
@@ -151,7 +163,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
       }
 
       const saved = updated?.[0] ?? { ...note, title, content };
-      setOpenEditDialog(false);
+      setIsEditing(false);
       router.replace(notePath(saved));
     } catch {
       setSubmitError("Failed to save note or attachment.");
@@ -247,7 +259,29 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
           <div className="relative min-h-[50vh]">
             <div className="flex items-center justify-between border-b pb-4">
               <div>
-                <h2 className="mt-4 font-medium!">{note.title}</h2>
+                <h3
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="mt-4 font-medium!"
+                  onBlur={(e) =>
+                    handleUpdateNote({
+                      title: e.currentTarget.innerText,
+                      content: note.content,
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      setIsEditing(false);
+                      handleUpdateNote({
+                        title: e.currentTarget.innerText,
+                        content: note.content,
+                      });
+                    }
+                  }}
+                >
+                  {note.title}
+                </h3>
                 <h6 className="mt-1 text-muted-foreground">
                   Created {formatUIFriendlyDate(note.created_at)}
                 </h6>
@@ -255,7 +289,29 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
               </div>
             </div>
 
-            <p className="mt-6 whitespace-pre-wrap">{note.content}</p>
+            <p
+              contentEditable
+              suppressContentEditableWarning
+              className="mt-6 whitespace-pre-wrap"
+              onBlur={(e) =>
+                handleUpdateNote({
+                  title: note.title,
+                  content: e.currentTarget.innerText,
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setIsEditing(false);
+                  handleUpdateNote({
+                    title: note.title,
+                    content: e.currentTarget.innerText,
+                  });
+                }
+              }}
+            >
+              {note.content}
+            </p>
 
             {attachmentUrl && note.attachment_mime?.startsWith("image/") && (
               <img
@@ -340,7 +396,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
         </ContextMenuTrigger>
 
         <ContextMenuContent className="w-56">
-          <ContextMenuItem onClick={() => setOpenEditDialog(true)}>
+          <ContextMenuItem onClick={() => setIsEditing(true)}>
             <Edit2 /> Edit
           </ContextMenuItem>
           <ContextMenuSeparator />

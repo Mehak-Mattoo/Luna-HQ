@@ -203,7 +203,7 @@ export function SidebarFolders() {
                           )}
                           onClick={() => toggleFolder(folder.id)}
                         />
-                        <h6 className="truncate">{folder.name}</h6>
+                        <span className="truncate">{folder.name}</span>
                       </Link>
                     </SidebarMenuButton>
 
@@ -262,7 +262,7 @@ export function SidebarFolders() {
                                     className="size-2"
                                     fill="currentColor"
                                   />
-                                  <h6>{note.title}</h6>
+                                  <span>{note.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -297,8 +297,8 @@ export function SidebarFolders() {
                     tooltip={note.title}
                   >
                     <Link href={notePath(note)}>
-                      <File className="size-4" />
-                      <h6 className="truncate">{note.title}</h6>
+                      <File className="w-2 h-2" />
+                      <span className="truncate">{note.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

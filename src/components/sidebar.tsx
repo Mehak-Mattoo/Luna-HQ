@@ -44,14 +44,14 @@ export function AppSidebar() {
             <SidebarMenuItem className="flex justify-between gap-2">
               <SidebarMenuButton>
                 <PlusCircle className="size-5 text-primary" />
-                <h6>New Note</h6>
+                <span>New Note</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setSearchModalOpen(true)}>
                 <Search className="size-5 text-tertiary" />
-                <h6>Search</h6>
+                <span>Search</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

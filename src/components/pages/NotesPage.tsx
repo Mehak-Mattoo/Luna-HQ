@@ -74,9 +74,9 @@ function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-full flex justify-between gap-1">
-            <p className="truncate font-semibold text-foreground">
+            <h6 className="truncate font-medium text-foreground">
               {note.title}
-            </p>
+            </h6>
           </div>
         </div>
         <span className=" text-muted-foreground">
@@ -84,7 +84,7 @@ function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
         </span>
       </div>
 
-      <h6 className="mt-2 line-clamp-3 leading-relaxed text-muted-foreground">
+      <h6 className="mt-2 line-clamp-3 text-muted-foreground">
         {note.content}
       </h6>
 
@@ -264,17 +264,17 @@ const NotesPage = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-4">
               <div>
-                <h2 className=" font-bold tracking-tight text-foreground ">
+                <h3 className=" tracking-tight text-foreground ">
                   {heading}
-                </h2>
-                <p className="mt-1 text-muted-foreground md:text-base">
+                </h3>
+                <h6 className="mt-1 text-muted-foreground md:text-base">
                   {isLoading ? "Loading your notes…" : subheading}
-                </p>
+                </h6>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={handleCreateClick} size="lg">
+              <Button onClick={handleCreateClick}>
                 <Plus className="size-4" />
                 Add Note
               </Button>

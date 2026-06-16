@@ -27,12 +27,26 @@ export const getGreeting = () => {
 
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
-export const formatUIFriendlyDate = (date: string) => {
-  const diff = new Date(date).getTime() - Date.now();
+const RELATIVE_THRESHOLD_DAYS = 7; 
 
-  const minutes = Math.round(diff / (1000 * 60));
-  const hours = Math.round(diff / (1000 * 60 * 60));
-  const days = Math.round(diff / (1000 * 60 * 60 * 24));
+export const formatUIFriendlyDate = (date: string) => {
+  const then = new Date(date);
+  if (Number.isNaN(then.getTime())) return "";
+
+  const diffMs = then.getTime() - Date.now();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  // Past/future beyond threshold → switch to date after this
+  if (Math.abs(diffDays) >= RELATIVE_THRESHOLD_DAYS) {
+    return then.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  const minutes = Math.round(diffMs / (1000 * 60));
+  const hours = Math.round(diffMs / (1000 * 60 * 60));
 
   if (Math.abs(minutes) < 60) {
     return rtf.format(minutes, "minute");
@@ -42,7 +56,7 @@ export const formatUIFriendlyDate = (date: string) => {
     return rtf.format(hours, "hour");
   }
 
-  return rtf.format(days, "day");
+  return rtf.format(diffDays, "day");
 };
 
 export const getSnippet = (text: string, query: string, radius = 25) => {
