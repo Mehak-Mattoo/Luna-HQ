@@ -44,6 +44,8 @@ import {
 } from "../ui/context-menu";
 import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
 import { Input } from "../ui/input";
+import { Field, FieldDescription, FieldLabel } from "../ui/field";
+import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -191,7 +193,6 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     summarizeFolderMutation.mutate(note.folder_id);
   }
 
-
   async function handleAttachmentUpload(selectedFile: File) {
     if (!note) return;
     setSubmitError(null);
@@ -220,6 +221,20 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
     summaryMode === "folder" ? summarizeFolderMutation : summarizeMutation;
 
   useSetNavbarNote(note);
+
+useNoteShortcuts({
+  onDelete: () => setOpenDeleteDialog(true),
+  onSearch: () => {
+    // setSearchModalOpen(true)
+  },
+  onCloseModals: () => {
+    setOpenDeleteDialog(false);
+    setSummaryDrawerOpen(false);
+    setChatOpen(false);
+  },
+  enabled: !!note,
+});
+
 
   if (isLoading) {
     return (
@@ -311,24 +326,19 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
             </div>
 
             <div>
-              <label
-                htmlFor="note-attachment"
-                className="inline-flex cursor-pointer items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <Plus className="size-4" />
-                Add attachment
-              </label>
-              <Input
-                id="note-attachment"
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const selected = e.target.files?.[0];
-                  if (selected) void handleAttachmentUpload(selected);
-                  e.target.value = ""; // allow re-uploading same file
-                }}
-              />
+              <Field>
+                <FieldLabel htmlFor="picture">Attachment</FieldLabel>
+                <Input
+                  id="picture"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const selected = e.target.files?.[0];
+                    if (selected) void handleAttachmentUpload(selected);
+                    e.target.value = ""; // allow re-uploading same file
+                  }}
+                />
+              </Field>
             </div>
 
             <p
