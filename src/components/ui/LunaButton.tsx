@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/hover-card";
 import { LUNA } from "@/components/helpers/constants";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { icons } from "@/assets";
 
 export type LunaActionOption = {
   id: string;
@@ -27,9 +29,15 @@ export function LunaButton({ options, isBusy = false }: LunaButtonProps) {
   return (
     <HoverCard openDelay={80} closeDelay={120}>
       <HoverCardTrigger asChild>
-        <Button size="lg" disabled={isBusy} className="gap-2 rounded-full">
-          {LUNA}
-        </Button>
+        <div className="">
+          <Image
+            src={icons.lunaGif}
+            alt="Luna"
+            width={80}
+            height={80}
+            className="-scale-x-100"
+          />
+        </div>
       </HoverCardTrigger>
       <HoverCardContent
         align="end"

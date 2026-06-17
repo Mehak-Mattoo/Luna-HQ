@@ -222,19 +222,18 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
 
   useSetNavbarNote(note);
 
-useNoteShortcuts({
-  onDelete: () => setOpenDeleteDialog(true),
-  onSearch: () => {
-    // setSearchModalOpen(true)
-  },
-  onCloseModals: () => {
-    setOpenDeleteDialog(false);
-    setSummaryDrawerOpen(false);
-    setChatOpen(false);
-  },
-  enabled: !!note,
-});
-
+  useNoteShortcuts({
+    onDelete: () => setOpenDeleteDialog(true),
+    onSearch: () => {
+      // setSearchModalOpen(true)
+    },
+    onCloseModals: () => {
+      setOpenDeleteDialog(false);
+      setSummaryDrawerOpen(false);
+      setChatOpen(false);
+    },
+    enabled: !!note,
+  });
 
   if (isLoading) {
     return (
@@ -439,10 +438,6 @@ useNoteShortcuts({
         </ContextMenuTrigger>
 
         <ContextMenuContent className="w-56">
-          <ContextMenuItem onClick={() => setIsEditing(true)}>
-            <Edit2 /> Edit
-          </ContextMenuItem>
-          <ContextMenuSeparator />
           <ContextMenuItem
             variant="destructive"
             onClick={() => setOpenDeleteDialog(true)}
