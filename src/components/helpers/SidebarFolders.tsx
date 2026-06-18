@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
-  ChevronRight,
-  File,
   FileText,
   Folder,
   MoreHorizontal,
@@ -32,9 +30,6 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
@@ -43,7 +38,6 @@ import {
   type Folder as FolderType,
 } from "@/hooks/useFolders";
 import { useNotes } from "@/hooks/useNotes";
-import { cn } from "@/lib/utils";
 
 function notesHref(folderId?: string, create?: boolean) {
   const params = new URLSearchParams();
@@ -59,13 +53,11 @@ export function SidebarFolders() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeFolderId = searchParams.get("folder");
-  const router = useRouter();
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
   const { data: allNotes = [] } = useNotes("all");
 
   const deleteFolder = useDeleteFolder();
 
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderType | null>(null);
 
@@ -84,40 +76,15 @@ export function SidebarFolders() {
     if (!open) setEditingFolder(null);
   }
 
-  const favoriteNotes = useMemo(() => {
-    return allNotes.filter((note) => note.is_favorite);
-  }, [allNotes]);
+  const favoriteNotes = useMemo(
+    () => allNotes.filter((note) => note.is_favorite),
+    [allNotes],
+  );
 
-  const notesByFolder = useMemo(() => {
-    const map = new Map<string, typeof allNotes>();
-    for (const folder of folders) {
-      map.set(folder.id, []);
-    }
-    const uncategorized: typeof allNotes = [];
-    for (const note of allNotes) {
-      if (note.folder_id && map.has(note.folder_id)) {
-        map.get(note.folder_id)!.push(note);
-      } else if (!note.folder_id) {
-        uncategorized.push(note);
-      }
-    }
-    return { map, uncategorized };
-  }, [folders, allNotes]);
-
-  function isExpanded(folderId: string) {
-    return expanded[folderId] ?? activeFolderId === folderId;
-  }
-
-  function toggleFolder(folderId: string) {
-    setExpanded((prev) => ({
-      ...prev,
-      [folderId]: !isExpanded(folderId),
-    }));
-  }
+  const isAllNotesActive =
+    pathname === protectedRoutes.ALL_NOTES && !activeFolderId;
 
   async function handleDeleteFolder(folder: FolderType) {
-   
-
     try {
       await deleteFolder.mutateAsync(folder.id);
       toast.success("Folder deleted");
@@ -130,12 +97,18 @@ export function SidebarFolders() {
     <>
       <SidebarGroup>
         <SidebarGroupLabel>Favorites</SidebarGroupLabel>
+        <SidebarGroupAction title="New note" asChild>
+          <Link href={`${protectedRoutes.ALL_NOTES}?create=1`}>
+            <Plus className="size-4" />
+          </Link>
+        </SidebarGroupAction>
         <SidebarGroupContent>
           <SidebarMenu>
             {favoriteNotes.length === 0 ? (
               <SidebarMenuItem>
                 <SidebarMenuButton disabled className="text-muted-foreground">
-                  No favorites yet
+                  <FileText className="size-4 opacity-50" />
+                  <span>No favorites yet</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ) : (
@@ -144,6 +117,7 @@ export function SidebarFolders() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === notePath(note)}
+                    className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
                   >
                     <Link href={notePath(note)}>
                       <FileText className="size-4" />
@@ -156,7 +130,9 @@ export function SidebarFolders() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+
       <SidebarSeparator />
+
       <SidebarGroup>
         <SidebarGroupLabel>My Folders</SidebarGroupLabel>
         <SidebarGroupAction title="New folder" onClick={openCreateFolderDialog}>
@@ -167,9 +143,7 @@ export function SidebarFolders() {
             {foldersLoading ? (
               <SidebarMenuItem>
                 <SidebarMenuButton disabled>
-                  <span className=" text-muted-foreground">
-                    Loading folders…
-                  </span>
+                  <span className="text-muted-foreground">Loading…</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ) : folders.length === 0 ? (
@@ -183,130 +157,91 @@ export function SidebarFolders() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ) : (
-              folders.map((folder) => {
-                const folderNotes = notesByFolder.map.get(folder.id) ?? [];
-                const open = isExpanded(folder.id);
+              folders.map((folder) => (
+                <SidebarMenuItem key={folder.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={activeFolderId === folder.id}
+                    tooltip={folder.name}
+                    className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
+                  >
+                    <Link href={notesHref(folder.id)}>
+                      <Folder className="size-4 text-amber-400/80" />
+                      <span className="truncate">{folder.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
 
-                return (
-                  <SidebarMenuItem key={folder.id} className=" items-center">
-                    <SidebarMenuButton
-                      asChild
-                      isActive={activeFolderId === folder.id}
-                      tooltip={folder.name}
-                      className="flex-1"
-                    >
-                      <Link href={notesHref(folder.id)}>
-                        <ChevronRight
-                          className={cn(
-                            "size-4 transition-transform",
-                            open && "rotate-90",
-                          )}
-                          onClick={() => toggleFolder(folder.id)}
-                        />
-                        <span className="truncate">{folder.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction showOnHover>
-                          <MoreHorizontal className="size-4" />
-                          <span className="sr-only">Folder actions</span>
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={notesHref(folder.id, true)}
-                            className="flex items-center gap-2"
-                          >
-                            <Plus className="size-4" />
-                            Add note
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => openRenameFolderDialog(folder)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuAction showOnHover>
+                        <MoreHorizontal className="size-4" />
+                        <span className="sr-only">Folder actions</span>
+                      </SidebarMenuAction>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href={notesHref(folder.id, true)}
                           className="flex items-center gap-2"
                         >
-                          <Pencil className="size-4" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => handleDeleteFolder(folder)}
-                          className="flex items-center gap-2"
-                        >
-                          <Trash2 className="size-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {open && (
-                      <SidebarMenuSub>
-                        {folderNotes.length === 0 ? (
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton className="text-muted-foreground">
-                              <span className="text-xs">No notes yet</span>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ) : (
-                          folderNotes.map((note) => (
-                            <SidebarMenuSubItem key={note.id}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={pathname === notePath(note)}
-                              >
-                                <Link href={notePath(note)}>
-                                  <FileText
-                                    className="size-2"
-                                    fill="currentColor"
-                                  />
-                                  <span>{note.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))
-                        )}
-                      </SidebarMenuSub>
-                    )}
-                  </SidebarMenuItem>
-                );
-              })
+                          <Plus className="size-4" />
+                          Add note
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => openRenameFolderDialog(folder)}
+                        className="flex items-center gap-2"
+                      >
+                        <Pencil className="size-4" />
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => void handleDeleteFolder(folder)}
+                        className="flex items-center gap-2"
+                      >
+                        <Trash2 className="size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              ))
             )}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+
       <SidebarSeparator />
 
-      {notesByFolder.uncategorized.length > 0 && (
-        <SidebarGroup className="max-h-64 overflow-y-auto">
-          <SidebarGroupLabel
-            onClick={() => router.push(protectedRoutes.ALL_NOTES)}
-            className="cursor-pointer"
-          >
-            All Notes
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {notesByFolder.uncategorized.map((note) => (
-                <SidebarMenuItem key={note.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === notePath(note)}
-                    tooltip={note.title}
-                  >
-                    <Link href={notePath(note)}>
-                      <File className="w-2 h-2" />
-                      <span className="truncate">{note.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      )}
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isAllNotesActive}
+                className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
+              >
+                <Link href={protectedRoutes.ALL_NOTES}>
+                  <FileText className="size-4" />
+                  <span>All Notes</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                disabled
+                className="text-muted-foreground opacity-60"
+                tooltip="Coming soon"
+              >
+                <Trash2 className="size-4" />
+                <span>Trash</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
       <NewFolder
         open={folderDialogOpen}

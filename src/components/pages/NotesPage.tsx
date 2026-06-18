@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Paperclip, Plus, Slash, StickyNote } from "lucide-react";
-import { useNoteStore } from "@/lib/store";
-import { notePath, protectedRoutes } from "@/components/helpers/routes";
-import { supabase } from "@/lib/supabase";
+import {
+  Grid3X3,
+  LayoutList,
+  Paperclip,
+  Plus,
+  Star,
+} from "lucide-react";
+import { notePath } from "@/components/helpers/routes";
+import { getFolderTagStyle } from "@/components/helpers/constants";
+import { formatUIFriendlyDate } from "@/components/helpers/constants";
 import { Button } from "../ui/button";
 import {
   useCreateNote,
-  useUpdateNote,
-  useDeleteNote,
-  useUploadNoteAttachment,
-  type NoteFormPayload,
   useNotes,
   type Note,
   type NotesFilter,
@@ -23,98 +25,141 @@ import { SummarizeDrawer } from "../SummarizeDrawer";
 import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatUIFriendlyDate } from "../helpers/constants";
+
+type ViewMode = "grid" | "list";
+type ContentTab = "all" | "notes" | "files";
 
 function NoteCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card py-3 px-6">
-      <div className="flex items-start justify-between gap-3">
-        <Skeleton className="h-5 w-2/3" />
-        <Skeleton className="h-4 w-20 shrink-0" />
-      </div>
+    <div className="rounded-xl border border-border bg-card p-4">
+      <Skeleton className="h-5 w-2/3" />
+      <Skeleton className="mt-3 h-3 w-1/3" />
+      <Skeleton className="mt-4 h-10 w-full" />
     </div>
   );
 }
 
 type NoteCardProps = {
   note: Note;
-  isSelected: boolean;
+  folderName: string | null;
+  viewMode: ViewMode;
   onClick: () => void;
 };
 
-function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
+function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
   const hasAttachment = Boolean(note.attachment_path);
+  const tagStyle = folderName ? getFolderTagStyle(folderName) : null;
+
+  if (viewMode === "list") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="group flex w-full items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-medium">{note.title}</p>
+            {note.is_favorite && (
+              <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+            )}
+          </div>
+          <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+            {note.content || "No content yet"}
+          </p>
+        </div>
+        {folderName && tagStyle && (
+          <span
+            className={cn(
+              "hidden shrink-0 rounded-full px-2.5 py-0.5 text-xs ring-1 sm:inline-block",
+              tagStyle,
+            )}
+          >
+            {folderName}
+          </span>
+        )}
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
+        </span>
+        {hasAttachment && (
+          <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
+        )}
+      </button>
+    );
+  }
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "group w-full rounded-xl border bg-card  py-3 px-5 text-left",
-        " hover:border-primary/40 hover:shadow-md",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        isSelected
-          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-          : "border-border",
-      )}
+      className="group flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-full flex justify-between gap-1">
-            <h6 className="truncate font-medium text-foreground">
-              {note.title}
-            </h6>
-          </div>
+      <div className="flex items-start justify-between gap-2">
+        <p className="line-clamp-2 font-medium leading-snug">{note.title}</p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {note.is_favorite && (
+            <Star className="size-3.5 fill-amber-400 text-amber-400" />
+          )}
+          {/* {hasAttachment && (
+            <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+              <Paperclip className="size-3" />1
+            </span>
+          )} */}
         </div>
-        <span className=" text-muted-foreground">
-          {formatUIFriendlyDate(note.created_at)}
-        </span>
       </div>
 
-      <h6 className="mt-2 line-clamp-3 text-muted-foreground">
-        {note.content}
-      </h6>
+      <span className="mt-1  text-muted-foreground">
+        {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
+      </span>
 
-      {hasAttachment && (
-        <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-          <Paperclip className="size-3" />
-          Attachment
-        </div>
+      <p className="mt-3 line-clamp-2 flex-1 text-sm text-muted-foreground">
+        {note.content || "No content yet"}
+      </p>
+
+      {folderName && tagStyle && (
+        <span
+          className={cn(
+            "mt-4 inline-flex w-fit rounded-full px-2.5 py-0.5 text-xs ring-1",
+            tagStyle,
+          )}
+        >
+          {folderName}
+        </span>
       )}
     </button>
   );
 }
 
-function EmptyNotesState({
-  activeFolder,
-  onCreateClick,
-}: {
-  activeFolder: { name: string } | null;
-  onCreateClick: () => void;
-}) {
+function EmptyNotesState({ onCreateClick }: { onCreateClick: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-muted/40 px-6 py-16 text-center">
-      <h3 className="mt-5 text-lg font-semibold text-foreground">
-        {activeFolder ? "This folder is empty" : "No notes yet"}
-      </h3>
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
+      <h3 className="text-lg font-semibold">No notes yet</h3>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        {activeFolder
-          ? `Add your first note to "${activeFolder.name}" and it will show up here.`
-          : "Create your first note to start capturing ideas and organizing them into folders."}
+        Create your first note to start capturing ideas and organizing them
+        into folders.
       </p>
-      <Button className="mt-6" size="lg" onClick={onCreateClick}>
+      <Button
+        className="mt-6 bg-violet-600 hover:bg-violet-500"
+        size="lg"
+        onClick={onCreateClick}
+      >
         <Plus className="size-4" />
-        {activeFolder ? "Add note to folder" : "Create your first note"}
+        Add Note
       </Button>
     </div>
   );
 }
 
+const TABS: { id: ContentTab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "notes", label: "Notes" },
+  { id: "files", label: "Files" },
+];
+
 const NotesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const folderId = searchParams.get("folder");
-  const shouldOpenCreate = searchParams.get("create");
 
   const notesFilter: NotesFilter = folderId ?? "all";
   const { data: notes = [], isLoading, isError, error } = useNotes(notesFilter);
@@ -122,93 +167,30 @@ const NotesPage = () => {
 
   const activeFolder = folders.find((f) => f.id === folderId) ?? null;
 
-  const { selectedNoteId, setSelectedNoteId } = useNoteStore();
-  const [openDialog, setOpenDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<ContentTab>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
 
-  const selectedNote = useMemo(
-    () => notes.find((note) => note.id === selectedNoteId) ?? null,
-    [notes, selectedNoteId],
-  );
-
   const createNote = useCreateNote();
-  const updateNote = useUpdateNote();
-  const deleteNote = useDeleteNote();
-  const uploadAttachment = useUploadNoteAttachment();
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const summarizeFolder = useSummarizeFolder();
 
-  const isSaving =
-    createNote.isPending ||
-    updateNote.isPending ||
-    deleteNote.isPending ||
-    uploadAttachment.isPending;
-
-  useEffect(() => {
-    if (shouldOpenCreate) {
-      setSelectedNoteId(null);
-      setSubmitError(null);
-      setOpenDialog(true);
+  const folderNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const folder of folders) {
+      map.set(folder.id, folder.name);
     }
-  }, [shouldOpenCreate, setSelectedNoteId]);
+    return map;
+  }, [folders]);
 
-  async function handleSubmit(payload: NoteFormPayload) {
-    const { title, content, file } = payload;
-    setSubmitError(null);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    try {
-      if (selectedNote) {
-        await updateNote.mutateAsync({ ...selectedNote, title, content });
-        if (file) {
-          await uploadAttachment.mutateAsync({
-            file,
-            noteId: selectedNote.id,
-            userId: user.id,
-          });
-        }
-      } else {
-        const created = await createNote.mutateAsync({
-          title,
-          content,
-          folder_id: folderId,
-        });
-        if (file) {
-          await uploadAttachment.mutateAsync({
-            file,
-            noteId: created?.[0]?.id,
-            userId: user.id,
-          });
-        }
-      }
-
-      setSelectedNoteId(null);
-      setOpenDialog(false);
-
-      if (shouldOpenCreate && folderId) {
-        router.replace(`${protectedRoutes.ALL_NOTES}?folder=${folderId}`);
-      }
-    } catch (err) {
-      setSubmitError(
-        err instanceof Error
-          ? err.message
-          : "Failed to save note or attachment.",
-      );
+  const filteredNotes = useMemo(() => {
+    if (activeTab === "notes") {
+      return notes.filter((n) => !n.attachment_path);
     }
-  }
-
-  function handleDelete() {
-    if (!selectedNote) return;
-
-    deleteNote.mutate(selectedNote.id, {
-      onSuccess() {
-        setSelectedNoteId(null);
-      },
-    });
-  }
+    if (activeTab === "files") {
+      return notes.filter((n) => n.attachment_path);
+    }
+    return notes;
+  }, [notes, activeTab]);
 
   async function handleCreateClick() {
     const createdNote = await createNote.mutateAsync({
@@ -216,11 +198,10 @@ const NotesPage = () => {
       content: "",
       folder_id: folderId,
     });
-    console.log(createdNote);
-    router.push(notePath(createdNote[0]));
+    if (createdNote?.[0]) {
+      router.push(notePath(createdNote[0]));
+    }
   }
-
-  const summarizeFolder = useSummarizeFolder();
 
   function handleSummarizeFolder() {
     if (!activeFolder) return;
@@ -228,9 +209,6 @@ const NotesPage = () => {
     setSummaryDrawerOpen(true);
     summarizeFolder.mutate(activeFolder.id);
   }
-
-  const heading = activeFolder ? activeFolder.name : "Your notes";
-  const subheading = `${notes.length} ${notes.length === 1 ? "note" : "notes"}`;
 
   const lunaOptions: LunaActionOption[] = activeFolder
     ? [
@@ -243,65 +221,119 @@ const NotesPage = () => {
       ]
     : [];
 
+  const countLabel = `${filteredNotes.length} ${filteredNotes.length === 1 ? "note" : "notes"}`;
+
   return (
-    <div className="flex flex-col gap-8">
-      <section className="relative overflow-hidden ">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/5 blur-3xl"
-        />
+    <div className="relative flex flex-col gap-6">
+      {/* Header toolbar */}
+      <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <p className="text-sm font-medium text-muted-foreground">
+            {isLoading ? "Loading…" : countLabel}
+          </p>
 
-        <div className="relative space-y-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div>
-                <h3 className=" tracking-tight text-foreground ">{heading}</h3>
-                <h6 className="mt-1 text-muted-foreground md:text-base">
-                  {isLoading ? "Loading your notes…" : subheading}
-                </h6>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={handleCreateClick}>
-                <Plus className="size-4" />
-                Add
-              </Button>
-            </div>
+          <div className="flex items-center gap-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "relative px-3 py-1.5 text-sm transition-colors",
+                  activeTab === tab.id
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+                {activeTab === tab.id && (
+                  <span className="absolute inset-x-1 bottom-[-17px] h-0.5 rounded-full bg-violet-500" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
-      </section>
 
-      {submitError && (
-        <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-destructive">
-          {submitError}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border p-0.5">
+            <Button
+              type="button"
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon-sm"
+              className="size-8"
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+            >
+              <Grid3X3 className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon-sm"
+              className="size-8"
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+            >
+              <LayoutList className="size-4" />
+            </Button>
+          </div>
+
+          <Button
+            className="bg-violet-600 hover:bg-violet-500"
+            onClick={() => void handleCreateClick()}
+            disabled={createNote.isPending}
+          >
+            <Plus className="size-4" />
+            Add Note
+          </Button>
+        </div>
+      </div>
+
+      {activeFolder && (
+        <p className="text-sm text-muted-foreground">
+          Folder: <span className="font-medium text-foreground">{activeFolder.name}</span>
         </p>
       )}
 
+      {/* Notes grid / list */}
       <section>
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            className={cn(
+              viewMode === "grid"
+                ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                : "flex flex-col gap-2",
+            )}
+          >
             {Array.from({ length: 6 }).map((_, index) => (
               <NoteCardSkeleton key={index} />
             ))}
           </div>
         ) : isError ? (
-          <div className="rounded-3xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center">
             <p className="font-medium text-destructive">Failed to load notes</p>
             <p className="mt-2 text-destructive/80">{`${error}`}</p>
           </div>
-        ) : notes.length === 0 ? (
-          <EmptyNotesState
-            activeFolder={activeFolder}
-            onCreateClick={handleCreateClick}
-          />
+        ) : filteredNotes.length === 0 ? (
+          <EmptyNotesState onCreateClick={() => void handleCreateClick()} />
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {notes.map((note) => (
+          <div
+            className={cn(
+              viewMode === "grid"
+                ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                : "flex flex-col gap-2",
+            )}
+          >
+            {filteredNotes.map((note) => (
               <NoteCard
                 key={note.id}
                 note={note}
-                isSelected={note.id === selectedNoteId}
+                folderName={
+                  note.folder_id
+                    ? (folderNameById.get(note.folder_id) ?? null)
+                    : null
+                }
+                viewMode={viewMode}
                 onClick={() => router.push(notePath(note))}
               />
             ))}
@@ -320,14 +352,14 @@ const NotesPage = () => {
         />
       )}
 
-      <div className="absolute bottom-5 right-5">
-        {activeFolder && notes.length > 0 && (
+      {activeFolder && notes.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-30">
           <LunaButton
             options={lunaOptions}
             isBusy={summarizeFolder.isPending}
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

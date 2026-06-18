@@ -66,23 +66,23 @@ type StatCardProps = {
 
 function StatCard({ label, value, delta, icon, iconClassName }: StatCardProps) {
   return (
-    <Card className="gap-0 py-4 ring-1 ring-border/60">
+    <Card className="gap-0 py-4 ring-1 ring-border/60 bg-card">
       <CardContent className="flex items-start gap-3">
           <div
             className={cn(
-              "flex size-16 shrink-0 items-center justify-center rounded-lg",
+              "flex size-12 shrink-0 items-center justify-center rounded-lg",
               iconClassName,
             )}
           >
             {icon}
           </div>
-        <div className="space-y-1">
-          <h4 className="font-medium tracking-tight">{value}</h4>
-          <p className="text-muted-foreground">{label}</p>
+        <div className="">
+          <h5 className="font-medium tracking-tight">{value}</h5>
+          <h6 className="text-muted-foreground">{label}</h6>
           {delta > 0 && (
-            <h6 className="font-medium text-emerald-500">
+            <span className="font-medium text-emerald-500">
               +{delta} this week
-            </h6>
+            </span>
           )}
         </div>
       </CardContent>
@@ -98,7 +98,7 @@ type SectionHeaderProps = {
 function SectionHeader({ title, action }: SectionHeaderProps) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      <h3 className="text-lg font-medium">{title}</h3>
+      <h3 className="text-lg font-medium text-">{title}</h3>
       {action && (
         <Link
           href={action.href}
@@ -177,7 +177,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 pb-4">
+    <div className="flex flex-col gap-8 pb-4 bg-background">
       {/* Greeting */}
       <section className="space-y-2">
         <h1 className="font-medium! tracking-tight sm:text-3xl">
@@ -213,28 +213,28 @@ export default function HomePage() {
             label="Notes"
             value={stats.notes}
             delta={stats.notesThisWeek}
-            icon={<FileText className="size-8 text-violet-400" />}
+            icon={<FileText className="size-5 text-violet-400" />}
             iconClassName="bg-violet-500/15"
           />
           <StatCard
             label="Folders"
             value={stats.folders}
             delta={stats.foldersThisWeek}
-            icon={<Folder className="size-8 text-amber-400" />}
+            icon={<Folder className="size-5 text-amber-400" />}
             iconClassName="bg-amber-500/15"
           />
           <StatCard
             label="AI Actions"
             value={stats.aiActions}
             delta={0}
-            icon={<Sparkles className="size-8 text-violet-300" />}
+            icon={<Sparkles className="size-5 text-violet-300" />}
             iconClassName="bg-violet-500/15"
           />
           <StatCard
             label="Files"
             value={stats.files}
             delta={stats.filesThisWeek}
-            icon={<Paperclip className="size-8 text-emerald-400" />}
+            icon={<Paperclip className="size-5 text-emerald-400" />}
             iconClassName="bg-emerald-500/15"
           />
         </div>
@@ -276,21 +276,21 @@ export default function HomePage() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                      <FileText className="size-4 text-violet-400" />
+                      <FileText className="size-4 text-accent" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{note.title}</p>
+                      <h6 className="truncate font-medium">{note.title}</h6>
                       {folderName && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <h6 className=" truncate text-xs text-muted-foreground">
                           {folderName}
-                        </p>
+                        </h6>
                       )}
-                      <p className="mt-2 text-xs text-muted-foreground">
+                      <span className=" text-muted-foreground">
                         Edited{" "}
                         {formatUIFriendlyDate(
                           note.updated_at ?? note.created_at,
                         )}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -406,14 +406,14 @@ export default function HomePage() {
                 const Icon = ACTIVITY_ICONS[item.icon];
                 const row = (
                   <div className="flex items-start gap-3 rounded-lg px-2 py-2.5">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <div className="flex size-5 shrink-0 items-center justify-center rounded-lg bg-muted">
                       <Icon className="size-3.5 text-muted-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm">{item.label}</p>
-                      <p className="capitalize text-muted-foreground">
+                      <h6 className="truncate text-sm">{item.label}</h6>
+                      <span className="capitalize text-muted-foreground">
                         {formatUIFriendlyDate(item.at)}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 );

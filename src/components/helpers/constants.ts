@@ -27,7 +27,7 @@ export const getGreeting = () => {
 
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
-const RELATIVE_THRESHOLD_DAYS = 7; 
+const RELATIVE_THRESHOLD_DAYS = 7;
 
 export const formatUIFriendlyDate = (date: string) => {
   const then = new Date(date);
@@ -67,4 +67,19 @@ export const getSnippet = (text: string, query: string, radius = 25) => {
   const prefix = start > 0 ? "…" : "";
   const suffix = end < text.length ? "…" : "";
   return `${prefix}${text.slice(start, end)}${suffix}`;
+};
+
+const TAG_STYLES = [
+  "bg-violet-500/15 text-violet-400 ring-violet-500/20",
+  "bg-emerald-500/15 text-emerald-400 ring-emerald-500/20",
+  "bg-sky-500/15 text-sky-400 ring-sky-500/20",
+  "bg-amber-500/15 text-amber-400 ring-amber-500/20",
+] as const;
+
+export function getFolderTagStyle(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return TAG_STYLES[Math.abs(hash) % TAG_STYLES.length];
 }

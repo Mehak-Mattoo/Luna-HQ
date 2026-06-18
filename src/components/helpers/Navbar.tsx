@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Heart, LogOut } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart, LogOut, Star } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "./constants";
 import { authRoutes, myNotesPath, protectedRoutes } from "./routes";
@@ -135,7 +135,7 @@ const Navbar = ({ note }: NavbarProps) => {
               isFavorite ? "Remove from favorites" : "Add to favorites"
             }
           >
-            <Heart
+            <Star
               className="size-5"
               fill={isFavorite ? "currentColor" : "none"}
             />
