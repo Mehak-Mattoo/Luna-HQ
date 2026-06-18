@@ -7,8 +7,6 @@ import {
   ArrowRight,
   FileText,
   Folder,
-  FolderOpen,
-  Heart,
   Paperclip,
   Search,
   Sparkles,
@@ -20,18 +18,24 @@ import { NewFolder } from "@/components/modals/NewFolder";
 import SearchModal from "@/components/modals/SearchModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   countSince,
   getFolderName,
-  getFoldersWithCounts,
   getLunaSuggestions,
   getRecentActivity,
   getRecentNotes,
 } from "@/components/helpers/homeData";
-import { myNotesPath, notePath, protectedRoutes } from "@/components/helpers/routes";
-import { formatUIFriendlyDate, getGreeting, LUNA } from "@/components/helpers/constants";
+import {
+  myNotesPath,
+  notePath,
+  protectedRoutes,
+} from "@/components/helpers/routes";
+import {
+  formatUIFriendlyDate,
+  getGreeting,
+  LUNA,
+} from "@/components/helpers/constants";
 import { useFolders } from "@/hooks/useFolders";
 import { useNotes } from "@/hooks/useNotes";
 import { getProfileFromUser } from "@/lib/profileUtils";
@@ -68,14 +72,14 @@ function StatCard({ label, value, delta, icon, iconClassName }: StatCardProps) {
   return (
     <Card className="gap-0 py-4 ring-1 ring-border/60 bg-card">
       <CardContent className="flex items-start gap-3">
-          <div
-            className={cn(
-              "flex size-12 shrink-0 items-center justify-center rounded-lg",
-              iconClassName,
-            )}
-          >
-            {icon}
-          </div>
+        <div
+          className={cn(
+            "flex size-12 shrink-0 items-center justify-center rounded-lg",
+            iconClassName,
+          )}
+        >
+          {icon}
+        </div>
         <div className="">
           <h5 className="font-medium tracking-tight">{value}</h5>
           <h6 className="text-muted-foreground">{label}</h6>
@@ -98,7 +102,7 @@ type SectionHeaderProps = {
 function SectionHeader({ title, action }: SectionHeaderProps) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      <h3 className="text-lg font-medium text-">{title}</h3>
+      <h4 className=" font-medium text-">{title}</h4>
       {action && (
         <Link
           href={action.href}
@@ -139,9 +143,7 @@ export default function HomePage() {
       aiActions: 0,
       notesThisWeek: countSince(notes),
       foldersThisWeek: countSince(folders),
-      filesThisWeek: countSince(
-        notes.filter((n) => n.attachment_path),
-      ),
+      filesThisWeek: countSince(notes.filter((n) => n.attachment_path)),
     }),
     [notes, folders],
   );
@@ -149,10 +151,6 @@ export default function HomePage() {
   const recentNotes = useMemo(() => getRecentNotes(notes, 4), [notes]);
   const suggestions = useMemo(() => getLunaSuggestions(notes), [notes]);
   const activity = useMemo(() => getRecentActivity(notes, 5), [notes]);
-  const foldersWithCounts = useMemo(
-    () => getFoldersWithCounts(folders, notes),
-    [folders, notes],
-  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -179,17 +177,17 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-8 pb-4 bg-background">
       {/* Greeting */}
-      <section className="space-y-2">
-        <h1 className="font-medium! tracking-tight sm:text-3xl">
+      <div className="space-y-2">
+        <h2 className="font-medium! tracking-tight sm:text-3xl">
           👋 {greeting}
           {firstName ? `, ${firstName}` : ""}
-        </h1>
+        </h2>
         {/* <p className="text-sm text-muted-foreground sm:text-lg">
           You have {stats.notes} notes, {stats.folders} folders
           {stats.aiActions > 0 && ` and ${stats.aiActions} AI actions this month`}
           .
         </p> */}
-      </section>
+      </div>
 
       {/* Search */}
       <button
@@ -271,7 +269,6 @@ export default function HomePage() {
                   href={notePath(note)}
                   className={cn(
                     "group rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5 transition-all hover:border-violet-500/30 hover:shadow-md",
-                    index === 0 && "border-b-2 border-b-violet-500",
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -306,7 +303,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Image src={icons.luna} alt="Luna" width={100} height={100} />
             <div>
-              <h5 className="font-medium">{LUNA} Assistant</h5>
+              <h5 className="font-medium">{LUNA} </h5>
               <h6 className=" text-muted-foreground">
                 What would you like to do today?
               </h6>
@@ -430,95 +427,6 @@ export default function HomePage() {
                 );
               })
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Folders + Quick access */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="relative overflow-hidden py-5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">
-              Browse by folder
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {foldersWithCounts.length === 0 ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  No folders yet. Group your notes to stay organized.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOpenAddFolder(true)}
-                >
-                  <FolderOpen className="size-4" />
-                  New folder
-                </Button>
-              </div>
-            ) : (
-              foldersWithCounts.map(({ folder, count }) => (
-                <Link
-                  key={folder.id}
-                  href={myNotesPath(folder.id)}
-                  className="flex items-center justify-between rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/50"
-                >
-                  <span className="flex items-center gap-2.5 text-sm">
-                    <Folder className="size-4 text-amber-400" />
-                    {folder.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {count} note{count === 1 ? "" : "s"}
-                  </span>
-                </Link>
-              ))
-            )}
-          </CardContent>
-          <FolderOpen className="pointer-events-none absolute -right-4 -bottom-4 size-28 text-muted/20" />
-        </Card>
-
-        <Card className="py-5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">
-              Quick Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {[
-              {
-                label: "Favorites",
-                count: stats.favorites,
-                href: protectedRoutes.ALL_NOTES,
-                icon: Heart,
-              },
-              {
-                label: "All notes",
-                count: stats.notes,
-                href: protectedRoutes.ALL_NOTES,
-                icon: FileText,
-              },
-              {
-                label: "Attachments",
-                count: stats.files,
-                href: protectedRoutes.ALL_NOTES,
-                icon: Paperclip,
-              },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="flex items-center justify-between rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/50"
-              >
-                <span className="flex items-center gap-2.5 text-sm">
-                  <item.icon className="size-4 text-muted-foreground" />
-                  {item.label}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {item.count}
-                </span>
-              </Link>
-            ))}
           </CardContent>
         </Card>
       </div>

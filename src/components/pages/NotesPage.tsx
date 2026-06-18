@@ -58,32 +58,35 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
         className="group flex w-full items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate font-medium">{note.title}</p>
-            {note.is_favorite && (
-              <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
-            )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <p className="truncate font-medium">{note.title}</p>
+
+              {folderName && tagStyle && (
+                <span
+                  className={cn(
+                    "hidden shrink-0 rounded-full px-2.5 py-0.5 text-xs ring-1 sm:inline-block",
+                    tagStyle,
+                  )}
+                >
+                  {folderName}
+                </span>
+              )}
+            </div>
           </div>
-          <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+          <h6 className="mt-1 line-clamp-1 text-muted-foreground">
             {note.content || "No content yet"}
-          </p>
+          </h6>
         </div>
-        {folderName && tagStyle && (
-          <span
-            className={cn(
-              "hidden shrink-0 rounded-full px-2.5 py-0.5 text-xs ring-1 sm:inline-block",
-              tagStyle,
-            )}
-          >
-            {folderName}
-          </span>
-        )}
+
+        <div className="flex flex-col items-end gap-2">
+          {note.is_favorite && (
+            <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+          )}
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
         </span>
-        {hasAttachment && (
-          <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
+        </div>
       </button>
     );
   }
@@ -112,9 +115,9 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
         {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
       </span>
 
-      <p className="mt-3 line-clamp-2 flex-1 text-sm text-muted-foreground">
+      <h6 className="mt-3 line-clamp-3 flex-1 text-muted-foreground">
         {note.content || "No content yet"}
-      </p>
+      </h6>
 
       {folderName && tagStyle && (
         <span
@@ -139,7 +142,7 @@ function EmptyNotesState({ onCreateClick }: { onCreateClick: () => void }) {
         into folders.
       </p>
       <Button
-        className="mt-6 bg-violet-600 hover:bg-violet-500"
+        className="mt-6 bg-accent hover:bg-accent/80 text-background"
         size="lg"
         onClick={onCreateClick}
       >
@@ -228,9 +231,9 @@ const NotesPage = () => {
       {/* Header toolbar */}
       <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          <p className="text-sm font-medium text-muted-foreground">
+          {/* <p className="text-sm font-medium text-muted-foreground">
             {isLoading ? "Loading…" : countLabel}
-          </p>
+          </p> */}
 
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (
@@ -247,7 +250,7 @@ const NotesPage = () => {
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <span className="absolute inset-x-1 bottom-[-17px] h-0.5 rounded-full bg-violet-500" />
+                  <span className="absolute inset-x-1 bottom-[-17px] h-0.5 rounded-full bg-accent/50" />
                 )}
               </button>
             ))}
@@ -279,7 +282,7 @@ const NotesPage = () => {
           </div>
 
           <Button
-            className="bg-violet-600 hover:bg-violet-500"
+            className="bg-accent hover:bg-accent/80 text-background"
             onClick={() => void handleCreateClick()}
             disabled={createNote.isPending}
           >

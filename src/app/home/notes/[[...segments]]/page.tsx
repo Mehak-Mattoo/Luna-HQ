@@ -9,10 +9,11 @@ export default function Page() {
   const segments = params.segments as string[] | undefined;
 
   if (!segments?.length) {
-    return <>
-    <NotesPage />
-    
-    </>;
+    return (
+      <>
+        <NotesPage />
+      </>
+    );
   }
 
   if (segments.length === 1) {

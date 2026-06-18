@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +17,7 @@ import {
   protectedRoutes,
 } from "@/components/helpers/routes";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Edit2, Plus, Trash } from "lucide-react";
+import { Edit2, Plus, Trash } from "lucide-react";
 import {
   Dialog,
   DialogDescription,
@@ -43,8 +43,7 @@ import {
   ContextMenuTrigger,
 } from "../ui/context-menu";
 import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
-import { Input } from "../ui/input";
-import { Field, FieldDescription, FieldLabel } from "../ui/field";
+import { cn } from "@/lib/utils";
 import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
 
 type NoteDetailPageProps = {
@@ -72,6 +71,7 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
 
   const note = notes?.find((n) => String(n.id) === noteId);
   const { data: folders = [] } = useFolders();
@@ -324,20 +324,35 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
               </div>
             </div>
 
-            <div>
-              <Field>
-                <FieldLabel htmlFor="picture">Attachment</FieldLabel>
-                <Input
-                  id="picture"
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    const selected = e.target.files?.[0];
-                    if (selected) void handleAttachmentUpload(selected);
-                    e.target.value = ""; // allow re-uploading same file
-                  }}
+            <div className="mt-4">
+              <input
+                ref={attachmentInputRef}
+                id="note-attachment"
+                type="file"
+                accept="image/*,.pdf"
+                className="sr-only"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0];
+                  if (selected) void handleAttachmentUpload(selected);
+                  e.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="group rounded-full border-border/60 bg-surface-alt hover:border-primary/40 hover:bg-primary/10"
+                aria-label="Add attachment"
+                title="Add attachment"
+                onClick={() => attachmentInputRef.current?.click()}
+              >
+                <Plus
+                  className={cn(
+                    "size-4 text-primary transition-transform duration-300 ease-out",
+                    "group-hover:rotate-90",
+                  )}
                 />
-              </Field>
+              </Button>
             </div>
 
             <p
@@ -368,11 +383,11 @@ export function NoteDetailPage({ noteId, folderId }: NoteDetailPageProps) {
               <img
                 src={attachmentUrl}
                 alt={note.attachment_name ?? "Attachment"}
-                className="mt-4 max-h-80 rounded-lg border object-contain"
+                className="mt-4 max-h-80 object-contain"
               />
             )}
 
-            {attachmentUrl && (
+            {attachmentUrl && note.attachment_mime?.startsWith("pdf/") && (
               <Button
                 onClick={() => window.open(attachmentUrl, "_blank")}
                 className="mt-2 inline-block"

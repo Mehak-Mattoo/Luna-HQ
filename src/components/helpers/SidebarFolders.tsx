@@ -98,9 +98,7 @@ export function SidebarFolders() {
       <SidebarGroup>
         <SidebarGroupLabel>Favorites</SidebarGroupLabel>
         <SidebarGroupAction title="New note" asChild>
-          <Link href={`${protectedRoutes.ALL_NOTES}?create=1`}>
-            <Plus className="size-4" />
-          </Link>
+        
         </SidebarGroupAction>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -166,7 +164,7 @@ export function SidebarFolders() {
                     className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
                   >
                     <Link href={notesHref(folder.id)}>
-                      <Folder className="size-4 text-amber-400/80" />
+                      <Folder className="size-4 text-foreground/70" />
                       <span className="truncate">{folder.name}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -221,7 +219,7 @@ export function SidebarFolders() {
               <SidebarMenuButton
                 asChild
                 isActive={isAllNotesActive}
-                className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
+                className="data-[active=true]:bg-accent/20 data-[active=true]:text-accent"
               >
                 <Link href={protectedRoutes.ALL_NOTES}>
                   <FileText className="size-4" />
@@ -229,7 +227,7 @@ export function SidebarFolders() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            {/* <SidebarMenuItem>
               <SidebarMenuButton
                 disabled
                 className="text-muted-foreground opacity-60"
@@ -238,7 +236,7 @@ export function SidebarFolders() {
                 <Trash2 className="size-4" />
                 <span>Trash</span>
               </SidebarMenuButton>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
