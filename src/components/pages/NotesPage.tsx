@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Grid3X3,
   LayoutList,
-  Paperclip,
   Plus,
   Star,
 } from "lucide-react";
@@ -47,7 +46,6 @@ type NoteCardProps = {
 };
 
 function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
-  const hasAttachment = Boolean(note.attachment_path);
   const tagStyle = folderName ? getFolderTagStyle(folderName) : null;
 
   if (viewMode === "list") {
@@ -231,9 +229,9 @@ const NotesPage = () => {
       {/* Header toolbar */}
       <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          {/* <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             {isLoading ? "Loading…" : countLabel}
-          </p> */}
+          </p>
 
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (

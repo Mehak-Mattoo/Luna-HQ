@@ -41,14 +41,18 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { messages?: UIMessage[]; noteId?: string | number };
+  let body: {
+    messages?: UIMessage[];
+    noteId?: string | number;
+    shareToken?: string | null;
+  };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { messages, noteId } = body;
+  const { messages, noteId, shareToken } = body;
 
   if (noteId === undefined || noteId === null || noteId === "") {
     return Response.json({ error: "noteId is required" }, { status: 400 });
@@ -59,7 +63,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const note = await loadNoteForUser(supabase, noteId, user.id);
+    const note = await loadNoteForUser(supabase, noteId, user.id, shareToken);
 
     const result = streamText({
       model: google(MODEL_NAME),

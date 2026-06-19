@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { UIMessage } from "ai";
 import {
   ArrowUp,
@@ -15,14 +15,9 @@ import {
 } from "lucide-react";
 
 import { icons } from "@/assets";
-import {
-  formatUIFriendlyDate,
-  getFolderTagStyle,
-  LUNA,
-} from "@/components/helpers/constants";
+import { LUNA } from "@/components/helpers/constants";
 import { useNoteChat } from "@/hooks/useNoteChat";
 import { type Note } from "@/hooks/useNotes";
-import { useFolders } from "@/hooks/useFolders";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -90,41 +85,10 @@ function getMessageText(message: UIMessage): string {
     .join("");
 }
 
-function formatNoteDate(date: string): string {
-  const then = new Date(date);
-  if (Number.isNaN(then.getTime())) return "—";
-  return then.toLocaleDateString(undefined, {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function getNoteStats(content: string) {
-  const words = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const readingMinutes = words === 0 ? 0 : Math.max(1, Math.ceil(words / 200));
-  return { words, readingMinutes };
-}
-
 function isChatRequestError(
   error: Error,
 ): error is Error & { status: number } {
   return "status" in error && typeof error.status === "number";
-}
-
-function ContextRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-1.5 text-sm">
-      <span className="shrink-0 text-muted-foreground">{label}</span>
-      <span className="text-right">{children}</span>
-    </div>
-  );
 }
 
 export function NoteChatPanel({
@@ -133,22 +97,9 @@ export function NoteChatPanel({
   onOpenChange,
 }: NoteChatPanelProps) {
   const { messages, sendMessage, status, error, stop } = useNoteChat(note.id);
-  const { data: folders = [] } = useFolders();
   const [input, setInput] = useState("");
 
   const isBusy = status === "submitted" || status === "streaming";
-
-  const folderName = useMemo(() => {
-    if (!note.folder_id) return null;
-    return folders.find((f) => f.id === note.folder_id)?.name ?? null;
-  }, [folders, note.folder_id]);
-
-  const { words, readingMinutes } = useMemo(
-    () => getNoteStats(note.content),
-    [note.content],
-  );
-
-  const attachmentCount = note.attachment_path ? 1 : 0;
 
   async function submitPrompt(text: string) {
     const trimmed = text.trim();

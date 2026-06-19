@@ -3,7 +3,8 @@ import { google } from "@ai-sdk/google";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { noteSummarySchema, type NoteSummary } from "@/lib/schema/noteSummary";
 import { BUCKET, MODEL_NAME } from "../components/helpers/constants";
-import { Note } from "@/hooks/useNotes";
+import type { Note } from "@/hooks/useNotes";
+import { loadNoteForUser, NoteContextError } from "./noteContextServer";
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
@@ -91,53 +92,46 @@ export async function summarizeNoteForUser(
   supabase: SupabaseClient,
   noteId: string | number,
   userId: string,
+  shareToken?: string | null,
 ): Promise<NoteSummary> {
-  const { data: note, error } = await supabase
-    .from("notes")
-    .select(
-      "id, title, content, attachment_path, attachment_name, attachment_mime, user_id",
-    )
-    .eq("id", noteId)
-    .single();
+  try {
+    const note = await loadNoteForUser(supabase, noteId, userId, shareToken);
+    const attachment = await loadAttachment(supabase, note);
+    const instruction = buildTextInstruction(note, attachment);
 
-  if (!note) {
-    throw new SummarizeNoteError("Note not found", 404);
-  }
+    if (attachment) {
+      const { object } = await generateObject({
+        model: google(MODEL_NAME),
+        schema: noteSummarySchema,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: instruction },
+              {
+                type: "file",
+                data: attachment.data,
+                mediaType: attachment.mediaType,
+              },
+            ],
+          },
+        ],
+      });
 
-  if (note.user_id !== userId) {
-    throw new SummarizeNoteError("Forbidden", 403);
-  }
+      return object;
+    }
 
-  const attachment = await loadAttachment(supabase, note as Note);
-  const instruction = buildTextInstruction(note as Note, attachment);
-
-  if (attachment) {
     const { object } = await generateObject({
       model: google(MODEL_NAME),
       schema: noteSummarySchema,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: instruction },
-            {
-              type: "file",
-              data: attachment.data,
-              mediaType: attachment.mediaType,
-            },
-          ],
-        },
-      ],
+      prompt: instruction,
     });
 
     return object;
+  } catch (err) {
+    if (err instanceof NoteContextError) {
+      throw new SummarizeNoteError(err.message, err.status);
+    }
+    throw err;
   }
-
-  const { object } = await generateObject({
-    model: google(MODEL_NAME),
-    schema: noteSummarySchema,
-    prompt: instruction,
-  });
-
-  return object;
 }

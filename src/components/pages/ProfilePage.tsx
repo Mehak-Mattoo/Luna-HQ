@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Camera, KeyRound } from "lucide-react";
+import { ArrowUpRight, Camera } from "lucide-react";
 
 import { authRoutes } from "@/components/helpers/routes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -110,7 +110,7 @@ export default function ProfilePage() {
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.success("Profile updated.");
       router.refresh();
-    } catch (err) {
+    } catch {
       toast.error("Failed to update profile.");
     } finally {
       setIsSaving(false);

@@ -2,17 +2,14 @@
 import React, { useState } from "react";
 import {
   DialogContent,
-  DialogHeader,
   Dialog,
-  DialogDescription,
 } from "../ui/dialog";
 import { useSearchNotes } from "@/hooks/useNotes";
 import { Input } from "../ui/input";
-import { Separator } from "../ui/separator";
 import { highlightText } from "../helpers/HighlightText";
 import { getSnippet } from "../helpers/constants";
 import { useRouter } from "next/navigation";
-import { notePath, protectedRoutes } from "../helpers/routes";
+import { notePath } from "../helpers/routes";
 
 type SearchModalProps = {
   open: boolean;

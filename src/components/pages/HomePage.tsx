@@ -27,7 +27,6 @@ import {
   getRecentNotes,
 } from "@/components/helpers/homeData";
 import {
-  myNotesPath,
   notePath,
   protectedRoutes,
 } from "@/components/helpers/routes";
@@ -261,7 +260,7 @@ export default function HomePage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {recentNotes.map((note, index) => {
+            {recentNotes.map((note) => {
               const folderName = getFolderName(note, folders);
               return (
                 <Link

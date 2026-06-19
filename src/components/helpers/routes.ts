@@ -35,3 +35,7 @@ export function myNotesPath(folderId?: string | null) {
   }
   return protectedRoutes.ALL_NOTES;
 }
+
+export function sharedNotePath(token: string) {
+  return `/share/${token}`;
+}

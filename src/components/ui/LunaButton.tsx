@@ -1,14 +1,10 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { LUNA } from "@/components/helpers/constants";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { icons } from "@/assets";

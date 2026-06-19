@@ -22,6 +22,9 @@ export interface Note {
   folder_name: string | null;
   created_at: string;
   updated_at: string | null;
+  share_token?: string | null;
+  is_shared?: boolean;
+  share_permission?: "private" | "view" | "edit" | null;
 }
 
 export type NotesFilter = "all" | "uncategorized" | string;
@@ -57,10 +60,14 @@ const searchNotesWithinNotes = async (query: string) => {
   return data;
 };
 
-export function useNotes(filter: NotesFilter = "all") {
+export function useNotes(
+  filter: NotesFilter = "all",
+  options?: { enabled?: boolean },
+) {
   return useQuery<Note[]>({
     queryKey: [TABLE_KEYS.NOTES, filter],
     queryFn: () => fetchNotes(filter),
+    enabled: options?.enabled ?? true,
   });
 }
 

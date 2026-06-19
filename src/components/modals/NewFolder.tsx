@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -15,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateFolder, useUpdateFolder } from "@/hooks/useFolders";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type NewFolderProps = {
   open: boolean;
@@ -31,11 +30,12 @@ export function NewFolder({ open, onOpenChange, folder }: NewFolderProps) {
 
   const isPending = isRename ? updateFolder.isPending : createFolder.isPending;
 
-  useEffect(() => {
-    if (open) {
+  function handleOpenChange(next: boolean) {
+    if (next) {
       setFolderName(folder?.name ?? "");
     }
-  }, [open, folder]);
+    onOpenChange(next);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,14 +53,13 @@ export function NewFolder({ open, onOpenChange, folder }: NewFolderProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
               {isRename ? "Rename folder" : "New folder"}
             </DialogTitle>
-          
           </DialogHeader>
           <FieldGroup className="py-4">
             <Field>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Heart, LogOut, Star } from "lucide-react";
+import { ChevronDown, Link2, LogOut, Share, Star } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "./constants";
 import { authRoutes, myNotesPath, protectedRoutes } from "./routes";
@@ -21,7 +21,6 @@ import {
 import { Button } from "../ui/button";
 import {
   Breadcrumb,
-  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
@@ -29,16 +28,17 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useFolders } from "@/hooks/useFolders";
+import { ShareNoteDialog } from "@/components/modals/ShareNoteDialog";
 
 type NavbarProps = {
   note?: Note;
 };
 
 const Navbar = ({ note }: NavbarProps) => {
-  const [isFavorite, setIsFavorite] = useState(note?.is_favorite ?? false);
   const router = useRouter();
   const updateNote = useUpdateNote();
   const [profile, setProfile] = useState({ name: "", email: "", avatar: "" });
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: folders = [] } = useFolders();
   const parentFolder = note?.folder_id
@@ -51,10 +51,6 @@ const Navbar = ({ note }: NavbarProps) => {
     });
   }, []);
 
-  useEffect(() => {
-    setIsFavorite(note?.is_favorite ?? false);
-  }, [note?.id, note?.is_favorite]);
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push(authRoutes.LOGIN);
@@ -64,7 +60,6 @@ const Navbar = ({ note }: NavbarProps) => {
     if (!note) return;
 
     const nextFavorite = !note.is_favorite;
-    setIsFavorite(nextFavorite);
 
     updateNote.mutate(
       {
@@ -79,11 +74,12 @@ const Navbar = ({ note }: NavbarProps) => {
         },
         onError: () => {
           toast.error("Failed to update note");
-          setIsFavorite(note.is_favorite);
         },
       },
     );
   };
+
+  const isFavorite = note?.is_favorite ?? false;
 
   const isExactHomePath = usePathname() === protectedRoutes.HOME;
 
@@ -126,20 +122,39 @@ const Navbar = ({ note }: NavbarProps) => {
 
       <div className="flex items-center">
         {note && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleFavorite}
-            aria-label={
-              isFavorite ? "Remove from favorites" : "Add to favorites"
-            }
-          >
-            <Star
-              className="size-5"
-              fill={isFavorite ? "currentColor" : "none"}
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleFavorite}
+              aria-label={
+                isFavorite ? "Remove from favorites" : "Add to favorites"
+              }
+            >
+              <Star
+                className="size-4"
+                fill={isFavorite ? "currentColor" : "none"}
+              />
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setShareOpen(true)}
+              aria-label="Share note"
+            >
+              <Link2 className="size-4 rotate-130" />
+            </Button>
+
+            <ShareNoteDialog
+              note={note}
+              open={shareOpen}
+              onOpenChange={setShareOpen}
+              ownerProfile={profile}
             />
-          </Button>
+          </>
         )}
 
         <DropdownMenu>
@@ -151,9 +166,6 @@ const Navbar = ({ note }: NavbarProps) => {
                   {getInitials(profile.name || profile.email)}
                 </AvatarFallback>
               </Avatar>
-              {/* <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
-                {profile.name || profile.email}
-              </span> */}
               <ChevronDown className="size-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
