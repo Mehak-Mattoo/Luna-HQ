@@ -55,15 +55,15 @@ export function AppSidebar() {
                   onClick={() => void handleNewNote()}
                   disabled={createNote.isPending}
                 >
-                  <h6>New Note</h6>
+                  <span>New Note</span>
                 </SidebarMenuButton>
                 <div
                   // size="icon"
-                  className="size-9 shrink-0 flex items-center justify-center "
+                  className="size-6 shrink-0 flex items-center justify-center "
                   onClick={() => void handleNewNote()}
                   // disabled={createNote.isPending}
                 >
-                  <Plus className="size-5" />
+                  <Plus className="size-4" />
                 </div>
               </div>
             </SidebarMenuItem>

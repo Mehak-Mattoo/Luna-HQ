@@ -387,7 +387,7 @@ export function NoteDetailPage({
           >
             <Plus
               className={cn(
-                "size-4 text-primary transition-transform duration-300 ease-out",
+                "size-4 text-accent/70 transition-transform duration-300 ease-out",
                 "group-hover:rotate-90",
               )}
             />

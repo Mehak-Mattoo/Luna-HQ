@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Link2, LogOut, Share, Star } from "lucide-react";
+import { ChevronDown, Link2, Link2Icon, LogOut, Share, Share2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "./constants";
 import { authRoutes, myNotesPath, protectedRoutes } from "./routes";
@@ -120,7 +120,7 @@ const Navbar = ({ note }: NavbarProps) => {
         </Breadcrumb>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-5">
         {note && (
           <>
             <Button
@@ -145,7 +145,8 @@ const Navbar = ({ note }: NavbarProps) => {
               onClick={() => setShareOpen(true)}
               aria-label="Share note"
             >
-              <Link2 className="size-4 rotate-130" />
+              <Share2 className="size-4" />
+              <h6 className="pl-2"> Share</h6>
             </Button>
 
             <ShareNoteDialog

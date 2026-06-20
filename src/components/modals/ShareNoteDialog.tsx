@@ -284,47 +284,15 @@ export function ShareNoteDialog({
 
           {/* General access */}
           <div className="border-t border-border pt-4">
-            <h6 className="mb-2 font-medium text-muted-foreground">
-              General access
-            </h6>
-            <div className="flex items-center justify-between gap-3 rounded-lg py-1">
-              <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-full bg-muted">
-                  {note.is_shared ? (
-                    <Globe className="size-4 text-muted-foreground" />
-                  ) : (
-                    <Lock className="size-4 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <h6 className=" font-medium">
-                    {note.is_shared
-                      ? "Anyone with the link"
-                      : "Only people invited"}
-                  </h6>
-                  <span className=" text-muted-foreground">
-                    {note.is_shared ? "Can view" : "Private to invitees"}
-                  </span>
-                </div>
-              </div>
+            <div className="flex items-center py-1">
               <Button
                 variant="outline"
-                size="sm"
                 className="shrink-0 gap-1.5"
                 onClick={() => void handleCopyLink()}
                 disabled={updateLinkShare.isPending}
               >
-                {note.is_shared ? (
-                  <>
-                    <Copy className="size-3.5" />
-                   <h6> Copy link</h6>
-                  </>
-                ) : (
-                  <>
-                    <Link2 className="size-3.5" />
-                    <h6>Share link</h6>
-                  </>
-                )}
+                <Link2 className="size-3.5 rotate-130" />
+                <h6>Copy Link</h6>
               </Button>
             </div>
           </div>

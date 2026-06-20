@@ -115,7 +115,7 @@ export function SidebarFolders() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === notePath(note)}
-                    className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
+                    className="data-[active=true]:bg-accent/10 data-[active=true]:text-accent"
                   >
                     <Link href={notePath(note)}>
                       <FileText className="size-4" />
@@ -161,10 +161,10 @@ export function SidebarFolders() {
                     asChild
                     isActive={activeFolderId === folder.id}
                     tooltip={folder.name}
-                    className="data-[active=true]:bg-violet-600/20 data-[active=true]:text-violet-300"
+                    className="data-[active=true]:bg-accent/10 data-[active=true]:text-accent"
                   >
                     <Link href={notesHref(folder.id)}>
-                      <Folder className="size-4 text-foreground/70" />
+                      <Folder className="size-4 text-accent/70" />
                       <span className="truncate">{folder.name}</span>
                     </Link>
                   </SidebarMenuButton>

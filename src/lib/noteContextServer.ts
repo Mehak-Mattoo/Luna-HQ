@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { TABLE_KEYS } from "@/components/helpers/constants";
 import type { Note } from "@/hooks/useNotes";
 
 export class NoteContextError extends Error {
@@ -71,7 +72,7 @@ export async function loadNoteWithAccess(
 
   if (userId) {
     const { data: share, error: shareError } = await supabase
-      .from("note_shares")
+      .from(TABLE_KEYS.NOTE_SHARES)
       .select("permission")
       .eq("note_id", noteId)
       .eq("shared_with_user_id", userId)

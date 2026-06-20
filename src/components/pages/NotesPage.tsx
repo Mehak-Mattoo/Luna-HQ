@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Grid3X3,
-  LayoutList,
-  Plus,
-  Star,
-} from "lucide-react";
+import { Grid3X3, LayoutList, Plus, Star } from "lucide-react";
 import { notePath } from "@/components/helpers/routes";
 import { getFolderTagStyle } from "@/components/helpers/constants";
 import { formatUIFriendlyDate } from "@/components/helpers/constants";
@@ -81,9 +76,9 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
           {note.is_favorite && (
             <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
           )}
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
-        </span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
+          </span>
         </div>
       </button>
     );
@@ -136,8 +131,8 @@ function EmptyNotesState({ onCreateClick }: { onCreateClick: () => void }) {
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
       <h3 className="text-lg font-semibold">No notes yet</h3>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-        Create your first note to start capturing ideas and organizing them
-        into folders.
+        Create your first note to start capturing ideas and organizing them into
+        folders.
       </p>
       <Button
         className="mt-6 bg-accent hover:bg-accent/80 text-background"
@@ -289,12 +284,6 @@ const NotesPage = () => {
           </Button>
         </div>
       </div>
-
-      {activeFolder && (
-        <p className="text-sm text-muted-foreground">
-          Folder: <span className="font-medium text-foreground">{activeFolder.name}</span>
-        </p>
-      )}
 
       {/* Notes grid / list */}
       <section>
