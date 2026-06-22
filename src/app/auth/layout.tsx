@@ -7,9 +7,9 @@ type Props = {
 const layout = ({ children }: Props) => {
   return (
     <div className="flex h-svh  items-center justify-center gap-2">
-      <div className="w-1/3 flex  items-center justify-center ">
+      {/* <div className="w-1/3 flex  items-center justify-center ">
         <h3>Welcome</h3>
-      </div>
+      </div> */}
       {children}
     </div>
   );

@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import {
   useCreateNote,
   useNotes,
+  useUpdateNote,
   type Note,
   type NotesFilter,
 } from "@/hooks/useNotes";
@@ -66,22 +67,35 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
               )}
             </div>
           </div>
-          <h6 className="mt-1 line-clamp-1 text-muted-foreground">
+          <span className="mt-1 line-clamp-1 text-muted-foreground">
             {note.content || "No content yet"}
-          </h6>
+          </span>
         </div>
 
         <div className="flex flex-col items-end gap-2">
           {note.is_favorite && (
             <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
           )}
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="shrink-0 text-muted-foreground">
             {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
           </span>
         </div>
       </button>
     );
   }
+
+  const handleFavorite = async (
+    event: React.MouseEvent<SVGSVGElement>,
+    note: Note,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    await updateNote.mutateAsync({
+      ...note,
+      is_favorite: !note.is_favorite ? true : false,
+    });
+  };
+  const updateNote = useUpdateNote();
 
   return (
     <button
@@ -92,8 +106,13 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
       <div className="flex items-start justify-between gap-2">
         <p className="line-clamp-2 font-medium leading-snug">{note.title}</p>
         <div className="flex shrink-0 items-center gap-1.5">
-          {note.is_favorite && (
+          {note.is_favorite ? (
             <Star className="size-3.5 fill-amber-400 text-amber-400" />
+          ) : (
+            <Star
+              className="size-3.5 text-muted-foreground"
+              onClick={(event) => handleFavorite(event, note)}
+            />
           )}
           {/* {hasAttachment && (
             <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
@@ -107,9 +126,9 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
         {formatUIFriendlyDate(note.updated_at ?? note.created_at)}
       </span>
 
-      <h6 className="mt-3 line-clamp-3 flex-1 text-muted-foreground">
+      <span className="mt-3 line-clamp-4 flex-1 text-muted-foreground">
         {note.content || "No content yet"}
-      </h6>
+      </span>
 
       {folderName && tagStyle && (
         <span
@@ -202,11 +221,11 @@ const NotesPage = () => {
   return (
     <div className="relative flex flex-col gap-6">
       {/* Header toolbar */}
-      <div className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          <p className="text-sm font-medium text-muted-foreground">
+          {/* <p className="text-sm font-medium text-muted-foreground">
             {isLoading ? "Loading…" : countLabel}
-          </p>
+          </p> */}
 
           <div className="flex items-center gap-1">
             {TABS.map((tab) => (
@@ -223,7 +242,7 @@ const NotesPage = () => {
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <span className="absolute inset-x-1 bottom-[-17px] h-0.5 rounded-full bg-accent/50" />
+                  <span className="absolute inset-x-1 bottom-[-10.5px] h-0.5 rounded-full bg-accent/50" />
                 )}
               </button>
             ))}
@@ -260,7 +279,7 @@ const NotesPage = () => {
             disabled={createNote.isPending}
           >
             <Plus className="size-4" />
-            Add Note
+            {/* Add Note */}
           </Button>
         </div>
       </div>

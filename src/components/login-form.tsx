@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { authRoutes, protectedRoutes } from "@/components/helpers/routes";
+import { Eye, EyeClosed } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -27,7 +28,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
+  const [showPassword, setShowPassword] = useState(false);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -71,30 +72,37 @@ export function LoginForm({
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="relative grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href={authRoutes.FORGOT_PASSWORD}
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="ml-auto inline-block text-xs underline-offset-4 hover:underline"
                   >
                     Forgot your password?
                   </Link>
                 </div>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="absolute right-2 top-11.5 -translate-y-1/2">
+                {showPassword ? (
+                    <EyeClosed className="size-4" onClick={() => setShowPassword(!showPassword)} />
+                  ) : (
+                    <Eye className="size-4" onClick={() => setShowPassword(!showPassword)} />
+                  )}
+                </div>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
+            <h6 className="mt-4 text-center ">
               Don&apos;t have an account?{" "}
               <Link
                 href={authRoutes.SIGNUP}
@@ -102,7 +110,7 @@ export function LoginForm({
               >
                 Sign up
               </Link>
-            </div>
+            </h6>
           </form>
         </CardContent>
       </Card>
