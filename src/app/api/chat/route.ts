@@ -8,6 +8,7 @@ import {
 } from "@/lib/noteContextServer";
 import { createClient } from "@/lib/server";
 import { MODEL_NAME } from "@/components/helpers/constants";
+import { logAiAction } from "@/lib/logAiAction";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -64,6 +65,12 @@ export async function POST(req: Request) {
 
   try {
     const note = await loadNoteForUser(supabase, noteId, user.id, shareToken);
+
+    await logAiAction(supabase, {
+      userId: user.id,
+      actionType: "chat",
+      noteId,
+    });
 
     const result = streamText({
       model: google(MODEL_NAME),

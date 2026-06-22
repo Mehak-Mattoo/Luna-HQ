@@ -1,6 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRoutes } from "@/components/helpers/routes";
 import { noteSummarySchema, type NoteSummary } from "@/lib/schema/noteSummary";
+import { AI_ACTIONS_QUERY_KEY } from "@/hooks/useAIActions";
 
 export type { NoteSummary };
 
@@ -28,8 +29,13 @@ async function summarizeFolder(folderId: string): Promise<NoteSummary> {
 }
 
 export function useSummarizeFolder() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ["summarize-folder"],
     mutationFn: summarizeFolder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: AI_ACTIONS_QUERY_KEY });
+    },
   });
 }

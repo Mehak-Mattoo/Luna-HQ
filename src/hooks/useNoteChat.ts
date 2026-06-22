@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { apiRoutes } from "@/components/helpers/routes";
+import { useInvalidateAiActions } from "@/hooks/useAIActions";
 
 class ChatRequestError extends Error {
   status: number;
@@ -13,6 +14,8 @@ class ChatRequestError extends Error {
 }
 
 export function useNoteChat(noteId: string | number) {
+  const invalidateAiActions = useInvalidateAiActions();
+
   return useChat({
     id: `note-chat-${noteId}`,
     transport: new DefaultChatTransport({
@@ -35,5 +38,8 @@ export function useNoteChat(noteId: string | number) {
         return res;
       },
     }),
+    onFinish: () => {
+      invalidateAiActions();
+    },
   });
 }

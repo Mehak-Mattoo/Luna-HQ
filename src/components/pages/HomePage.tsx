@@ -36,7 +36,9 @@ import {
   LUNA,
 } from "@/components/helpers/constants";
 import { useFolders } from "@/hooks/useFolders";
-import { useNotes } from "@/hooks/useNotes";
+import { useCreateNote, useNotes } from "@/hooks/useNotes";
+import { useAiActionStats } from "@/hooks/useAIActions";
+import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { getProfileFromUser } from "@/lib/profileUtils";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -123,12 +125,14 @@ const ACTIVITY_ICONS = {
 
 export default function HomePage() {
   const router = useRouter();
+  const { openChat } = useNoteChatPanel();
   const [openAddFolder, setOpenAddFolder] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userName, setUserName] = useState("");
 
   const { data: notes = [], isLoading: notesLoading } = useNotes();
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
+  const { data: aiStats } = useAiActionStats();
 
   const greeting = getGreeting();
   const firstName = userName.split(" ")[0];
@@ -139,12 +143,13 @@ export default function HomePage() {
       folders: folders.length,
       files: notes.filter((n) => n.attachment_path).length,
       favorites: notes.filter((n) => n.is_favorite).length,
-      aiActions: 0,
+      aiActions: aiStats?.thisMonth ?? 0,
+      aiActionsThisWeek: aiStats?.thisWeek ?? 0,
       notesThisWeek: countSince(notes),
       foldersThisWeek: countSince(folders),
       filesThisWeek: countSince(notes.filter((n) => n.attachment_path)),
     }),
-    [notes, folders],
+    [notes, folders, aiStats],
   );
 
   const recentNotes = useMemo(() => getRecentNotes(notes, 4), [notes]);
@@ -168,6 +173,20 @@ export default function HomePage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const createNote = useCreateNote();
+
+  async function handleNewNote() {
+      const created = await createNote.mutateAsync({
+        title: "Untitled",
+        content: "",
+        folder_id: null,
+      });
+      if (created?.[0]) {
+        router.push(notePath(created[0]));
+      }
+    }
+
 
   if (notesLoading || foldersLoading) {
     return <HomePageSkeleton />;
@@ -223,7 +242,7 @@ export default function HomePage() {
           <StatCard
             label="AI Actions"
             value={stats.aiActions}
-            delta={0}
+            delta={stats.aiActionsThisWeek}
             icon={<Sparkles className="size-5 text-violet-300" />}
             iconClassName="bg-violet-500/15"
           />
@@ -298,9 +317,9 @@ export default function HomePage() {
 
       {/* Luna hero */}
       <Card className="overflow-hidden border-violet-500/20 bg-linear-to-br from-violet-600/10 via-card to-card py-0 ring-1 ring-violet-500/20">
-        <CardContent className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+        <CardContent className="flex flex-col gap-6 p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <Image src={icons.luna} alt="Luna" width={100} height={100} />
+            <Image src={icons.luna} alt="Luna" width={80} height={80} />
             <div>
               <h5 className="font-medium">{LUNA} </h5>
               <h6 className=" text-muted-foreground">
@@ -313,9 +332,15 @@ export default function HomePage() {
               {
                 label: "Summarize today's notes",
                 onClick: () => {
-                  const today = recentNotes[0];
-                  if (today) router.push(notePath(today));
-                  else router.push(protectedRoutes.ALL_NOTES);
+                  const note = recentNotes[0];
+                  if (note) {
+                    openChat(
+                      note,
+                      "Summarize today's notes in clear, concise paragraphs.",
+                    );
+                  } else {
+                    router.push(protectedRoutes.ALL_NOTES);
+                  }
                 },
               },
               {
@@ -325,13 +350,13 @@ export default function HomePage() {
               {
                 label: "Create a new note",
                 onClick: () =>
-                  router.push(`${protectedRoutes.ALL_NOTES}?create=1`),
+                  handleNewNote(),
               },
               {
                 label: `Ask ${LUNA} anything`,
                 onClick: () => {
-                  const target = recentNotes[0];
-                  if (target) router.push(notePath(target));
+                  const note = recentNotes[0];
+                  if (note) openChat(note);
                 },
               },
             ].map((action) => (
@@ -351,7 +376,7 @@ export default function HomePage() {
 
       {/* Suggestions + Activity */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="py-5">
+        <Card className="py-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">
               Suggestions by {LUNA}
@@ -386,7 +411,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="py-5">
+        <Card className="py-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">
               Recent Activity
@@ -434,18 +459,18 @@ export default function HomePage() {
       <Card className="border-violet-500/10 bg-muted/20 py-2">
         <CardContent className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm italic text-muted-foreground">
-              &ldquo;The more you capture, the more {LUNA} {""} can help you
+            <h6 className="italic text-muted-foreground">
+              &ldquo;The more you capture, the more I can help you
               create.&rdquo;
-            </p>
+            </h6>
           </div>
           <div className="flex items-center gap-2  text-muted-foreground">
             — {LUNA}
             <Image
               src={icons.luna}
               alt="Luna"
-              width={80}
-              height={80}
+              width={60}
+              height={60}
               className="-scale-x-100"
             />
           </div>

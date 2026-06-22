@@ -4,6 +4,7 @@ import {
   summarizeNoteForUser,
 } from "@/lib/summarizeNoteServer";
 import { createClient } from "@/lib/server";
+import { logAiAction } from "@/lib/logAiAction";
 import { summarizeFolderForUser } from "@/lib/summarizeFolderServer";
 
 export async function POST(req: Request) {
@@ -52,11 +53,25 @@ export async function POST(req: Request) {
        body.folderId,
        user.id,
      );
+
+     await logAiAction(supabase, {
+       userId: user.id,
+       actionType: "summarize_folder",
+       folderId: body.folderId,
+     });
+
      return Response.json(object);
    }
 
    if (body.noteId) {
      const object = await summarizeNoteForUser(supabase, body.noteId, user.id);
+
+     await logAiAction(supabase, {
+       userId: user.id,
+       actionType: "summarize_note",
+       noteId: body.noteId,
+     });
+
      return Response.json(object);
    }
 

@@ -2,6 +2,7 @@ export const TABLE_KEYS = {
   NOTES: "notes",
   FOLDERS: "folders",
   NOTE_SHARES: "shared_notes",
+  AI_ACTIONS: "ai_actions",
 };
 
 export const LUNA = "Luna";
