@@ -14,9 +14,8 @@ import {
   type NotesFilter,
 } from "@/hooks/useNotes";
 import { useFolders } from "@/hooks/useFolders";
-import { useSummarizeFolder } from "@/hooks/useSummarizeFolder";
-import { SummarizeDrawer } from "../SummarizeDrawer";
-import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
+import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
+import { LunaButton } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -165,10 +164,9 @@ const NotesPage = () => {
 
   const [activeTab, setActiveTab] = useState<ContentTab>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
+  const { openChat } = useNoteChatPanel();
 
   const createNote = useCreateNote();
-  const summarizeFolder = useSummarizeFolder();
 
   const folderNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -198,24 +196,6 @@ const NotesPage = () => {
       router.push(notePath(createdNote[0]));
     }
   }
-
-  function handleSummarizeFolder() {
-    if (!activeFolder) return;
-    summarizeFolder.reset();
-    setSummaryDrawerOpen(true);
-    summarizeFolder.mutate(activeFolder.id);
-  }
-
-  const lunaOptions: LunaActionOption[] = activeFolder
-    ? [
-        {
-          id: "summarize-folder",
-          label: "Summarize folder",
-          onClick: handleSummarizeFolder,
-          disabled: summarizeFolder.isPending || notes.length === 0,
-        },
-      ]
-    : [];
 
   const countLabel = `${filteredNotes.length} ${filteredNotes.length === 1 ? "note" : "notes"}`;
 
@@ -331,23 +311,9 @@ const NotesPage = () => {
         )}
       </section>
 
-      {activeFolder && (
-        <SummarizeDrawer
-          title={activeFolder.name}
-          open={summaryDrawerOpen}
-          onOpenChange={setSummaryDrawerOpen}
-          summary={summarizeFolder.data}
-          error={summarizeFolder.error?.message ?? null}
-          isPending={summarizeFolder.isPending}
-        />
-      )}
-
-      {activeFolder && notes.length > 0 && (
+      {activeFolder && filteredNotes.length > 0 && (
         <div className="fixed bottom-6 right-6 z-30">
-          <LunaButton
-            options={lunaOptions}
-            isBusy={summarizeFolder.isPending}
-          />
+          <LunaButton onClick={() => openChat(filteredNotes[0])} />
         </div>
       )}
     </div>

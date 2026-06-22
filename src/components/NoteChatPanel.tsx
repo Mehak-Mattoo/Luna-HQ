@@ -1,82 +1,24 @@
 "use client";
 
-import Image from "next/image";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { UIMessage } from "ai";
-import {
-  ArrowUp,
-  FileText,
-  Lightbulb,
-  List,
-  Loader2,
-  Search,
-  Sparkles,
-  CircleHelp,
-} from "lucide-react";
+import { ArrowUp, Loader2, X } from "lucide-react";
 
-import { icons } from "@/assets";
 import { LUNA } from "@/components/helpers/constants";
 import { useNoteChat } from "@/hooks/useNoteChat";
 import { type Note } from "@/hooks/useNotes";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Input } from "./ui/input";
 
 export type NoteChatPanelProps = {
   note: Note;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** Sent once when the panel opens (e.g. from Luna quick actions). */
+  pendingPrompt?: string | null;
+  onPendingPromptSent?: () => void;
+  onClose?: () => void;
 };
-
-type QuickAction = {
-  id: string;
-  label: string;
-  prompt: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    id: "summarize",
-    label: "Summarize this note",
-    prompt: "Summarize this note in clear, concise paragraphs.",
-    icon: FileText,
-  },
-  {
-    id: "key-points",
-    label: "Extract key points",
-    prompt: "Extract the key points from this note as a bullet list.",
-    icon: List,
-  },
-  {
-    id: "interview",
-    label: "Generate interview questions",
-    prompt:
-      "Generate thoughtful interview questions based on the topics in this note.",
-    icon: CircleHelp,
-  },
-  {
-    id: "explain",
-    label: "Explain a concept",
-    prompt:
-      "Explain the main concepts in this note in simple terms with examples.",
-    icon: Lightbulb,
-  },
-  {
-    id: "related",
-    label: "Find related notes",
-    prompt:
-      "Based on this note, suggest related topics I should explore or notes I might want to create.",
-    icon: Search,
-  },
-];
 
 function getMessageText(message: UIMessage): string {
   return message.parts
@@ -85,19 +27,19 @@ function getMessageText(message: UIMessage): string {
     .join("");
 }
 
-function isChatRequestError(
-  error: Error,
-): error is Error & { status: number } {
+function isChatRequestError(error: Error): error is Error & { status: number } {
   return "status" in error && typeof error.status === "number";
 }
 
 export function NoteChatPanel({
   note,
-  open,
-  onOpenChange,
+  pendingPrompt,
+  onPendingPromptSent,
+  onClose,
 }: NoteChatPanelProps) {
-  const { messages, sendMessage, status, error, stop } = useNoteChat(note.id);
+  const { messages, sendMessage, status, error } = useNoteChat(note.id);
   const [input, setInput] = useState("");
+  const sentPendingRef = useRef<string | null>(null);
 
   const isBusy = status === "submitted" || status === "streaming";
 
@@ -108,164 +50,120 @@ export function NoteChatPanel({
     await sendMessage({ text: trimmed });
   }
 
+  useEffect(() => {
+    if (!pendingPrompt?.trim()) return;
+    if (sentPendingRef.current === pendingPrompt) return;
+
+    sentPendingRef.current = pendingPrompt;
+    void sendMessage({ text: pendingPrompt.trim() }).then(() =>
+      onPendingPromptSent?.(),
+    );
+  }, [pendingPrompt, onPendingPromptSent, sendMessage]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     await submitPrompt(input);
   }
 
-  async function handleQuickAction(action: QuickAction) {
-    await submitPrompt(action.prompt);
-  }
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-sm"
-      >
-        <SheetHeader className="sr-only">
-          <SheetTitle>{LUNA} — {note.title}</SheetTitle>
-          <SheetDescription>Chat and AI actions for this note</SheetDescription>
-        </SheetHeader>
-
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {/* Luna greeting */}
-            <div className="flex items-start gap-3 p-5 pb-3">
-              <div className="relative shrink-0">
-                <Image
-                  src={icons.luna}
-                  alt={LUNA}
-                  width={44}
-                  height={44}
-                  className="rounded-full ring-2 ring-accent/30"
-                />
-              </div>
-              <div className="min-w-0 pt-0.5">
-                <p className="text-sm font-medium leading-snug">
-                  I can help you with this note!
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Here are some things you can do:
-                </p>
-              </div>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex items-start justify-between gap-2 p-3 pb-3">
+            <div className=" flex flex-col gap-2 min-w-0 pt-0.5">
+              <span className="font-medium leading-snug">
+                I can help you with this note!
+              </span>
+              <span className="text-muted-foreground">
+                Ask a question or request a summary below.
+              </span>
             </div>
+            <div>
+              {onClose && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onClose}
+                  aria-label="Close chat"
+                >
+                  <X className="size-4" />
+                </Button>
+              )}
+            </div>
+          </div>
 
-            {/* Quick actions */}
-            <ul className="space-y-0.5 px-3 pb-4" role="menu">
-              {QUICK_ACTIONS.map((action) => {
-                const Icon = action.icon;
+          <Separator />
+
+          {(messages.length > 0 || error) && (
+            <div className="space-y-4 p-5">
+              {messages.map((message) => {
+                const isUser = message.role === "user";
+
                 return (
-                  <li key={action.id} role="none">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={isBusy}
-                      onClick={() => void handleQuickAction(action)}
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "flex flex-col gap-1",
+                      isUser ? "items-end" : "items-start",
+                    )}
+                  >
+                    <div
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-                        "hover:bg-violet-500/10 hover:text-foreground",
-                        "disabled:pointer-events-none disabled:opacity-50",
+                        "max-w-[85%] rounded-lg px-3 py-2 leading-relaxed",
+                        isUser
+                          ? "bg-accent/20 text-foreground"
+                          : "bg-muted text-foreground",
                       )}
                     >
-                      <Icon className="size-4 shrink-0 text-violet-400" />
-                      {action.label}
-                    </button>
-                  </li>
+                      <h6 className="whitespace-pre-wrap">
+                        {getMessageText(message)}
+                      </h6>
+                    </div>
+                    <span className="font-medium text-muted-foreground">
+                      {isUser ? "You" : LUNA}
+                    </span>
+                  </div>
                 );
               })}
-            </ul>
 
-            <Separator />
-
-          
-
-            {/* Chat thread */}
-            {(messages.length > 0 || error) && (
-              <>
-              
-                <div className="space-y-4 p-5">
-                
-
-                  {messages.map((message) => (
-                    <div key={message.id} className="space-y-1">
-                      <p className="text-[11px] font-medium text-muted-foreground">
-                        {message.role === "user" ? "You" : LUNA}
-                      </p>
-                      <div
-                        className={cn(
-                          "rounded-xl px-3 py-2.5 text-sm leading-relaxed",
-                          message.role === "user"
-                            ? "bg-violet-600/20 text-foreground"
-                            : "bg-muted/60 text-foreground",
-                        )}
-                      >
-                        <p className="whitespace-pre-wrap">
-                          {getMessageText(message)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {error && (
-                    <p className="text-sm text-destructive" role="alert">
-                      {isChatRequestError(error) && error.status === 429
-                        ? "Too many requests. Please wait and try again."
-                        : isChatRequestError(error) && error.status === 404
-                          ? "Note not found."
-                          : isChatRequestError(error) && error.status === 401
-                            ? "Please sign in again."
-                            : error.message || "Something went wrong."}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Ask anything footer */}
-          <div className="shrink-0 border-t border-border/60 bg-card/50 p-4">
-            <form onSubmit={handleSubmit} className="relative">
-              <Sparkles className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-violet-400" />
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything!"
-                disabled={isBusy}
-                className={cn(
-                  "w-full rounded-xl border border-border/60 bg-muted/30 py-3 pr-12 pl-10 text-sm",
-                  "placeholder:text-muted-foreground focus:border-violet-500/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
-              />
-              <Button
-                type="submit"
-                size="icon-sm"
-                disabled={isBusy || !input.trim()}
-                className="absolute top-1/2 right-1.5 size-8 -translate-y-1/2 rounded-lg bg-violet-600 hover:bg-violet-500"
-              >
-                {isBusy ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="size-4" />
-                )}
-              </Button>
-            </form>
-            {isBusy && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="mt-2 w-full text-muted-foreground"
-                onClick={() => stop()}
-              >
-                Stop generating
-              </Button>
-            )}
-          </div>
+              {error && (
+                <p className="text-sm text-destructive" role="alert">
+                  {isChatRequestError(error) && error.status === 429
+                    ? "Too many requests. Please wait and try again."
+                    : isChatRequestError(error) && error.status === 404
+                      ? "Note not found."
+                      : "Something went wrong."}
+                </p>
+              )}
+            </div>
+          )}
         </div>
-      </SheetContent>
-    </Sheet>
+
+        <div className="shrink-0 border-t border-border/60 bg-card/50 p-4">
+          <form onSubmit={handleSubmit} className="relative">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask me anything!"
+              disabled={isBusy}
+              className="py-3 px-2"
+            />
+            <Button
+              type="submit"
+              size="icon-sm"
+              disabled={isBusy || !input.trim()}
+              className="absolute top-1/2 right-1.5 size-8 -translate-y-1/2 rounded-lg bg-accent/60 hover:bg-accent/50"
+            >
+              {isBusy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ArrowUp className="size-4" />
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }

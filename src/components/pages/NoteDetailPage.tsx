@@ -29,14 +29,9 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { useSummarizeNote } from "@/hooks/useSummarizeNote";
-import { useSummarizeFolder } from "@/hooks/useSummarizeFolder";
-import { useFolders } from "@/hooks/useFolders";
-import { SummarizeDrawer } from "@/components/SummarizeDrawer";
-import { NoteChatPanel } from "@/components/NoteChatPanel";
 import { BUCKET, formatUIFriendlyDate } from "@/components/helpers/constants";
 import { Skeleton } from "../ui/skeleton";
-import { LunaButton, type LunaActionOption } from "../ui/LunaButton";
+import { LunaButton } from "../ui/LunaButton";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -44,6 +39,7 @@ import {
   ContextMenuTrigger,
 } from "../ui/context-menu";
 import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
+import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { cn, stripScriptTags } from "@/lib/utils";
 import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
 
@@ -74,35 +70,17 @@ export function NoteDetailPage({
   const uploadAttachment = useUploadNoteAttachment();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const [summaryDrawerOpen, setSummaryDrawerOpen] = useState(false);
-  const [summaryTitle, setSummaryTitle] = useState("");
-  const [summaryMode, setSummaryMode] = useState<"note" | "folder">("note");
-  const [chatOpen, setChatOpen] = useState(false);
+  const { openChat, closeChat } = useNoteChatPanel();
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const contentRef = useRef<HTMLParagraphElement>(null);
 
   const note = initialNote ?? notes?.find((n) => String(n.id) === noteId);
   const isReadOnly = readOnly || trimmed;
-  const { data: folders = [] } = useFolders();
-  const summarizeMutation = useSummarizeNote();
-  const summarizeFolderMutation = useSummarizeFolder();
-
-  const parentFolder =
-    note?.folder_id != null
-      ? (folders.find((f) => f.id === note.folder_id) ?? null)
-      : null;
 
   useEffect(() => {
-    summarizeMutation.reset();
-    summarizeFolderMutation.reset();
-    /* eslint-disable react-hooks/set-state-in-effect -- reset drawer when switching notes */
-    setSummaryDrawerOpen(false);
-    setSummaryTitle("");
-    setSummaryMode("note");
-    /* eslint-enable react-hooks/set-state-in-effect */
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when navigating to another note
-  }, [noteId]);
+    closeChat();
+  }, [noteId, closeChat]);
 
   useEffect(() => {
     if (trimmed || initialNote) return;
@@ -187,26 +165,9 @@ export function NoteDetailPage({
     }
   };
 
-  function handleSummarizeNote() {
+  function handleOpenChat() {
     if (!note) return;
-
-    summarizeFolderMutation.reset();
-    summarizeMutation.reset();
-    setSummaryMode("note");
-    setSummaryTitle(note.title);
-    setSummaryDrawerOpen(true);
-    summarizeMutation.mutate(note);
-  }
-
-  function handleSummarizeWorkspace() {
-    if (!note?.folder_id || !parentFolder) return;
-
-    summarizeMutation.reset();
-    summarizeFolderMutation.reset();
-    setSummaryMode("folder");
-    setSummaryTitle(parentFolder.name);
-    setSummaryDrawerOpen(true);
-    summarizeFolderMutation.mutate(note.folder_id);
+    openChat(note);
   }
 
   async function handleAttachmentUpload(selectedFile: File) {
@@ -230,12 +191,6 @@ export function NoteDetailPage({
     }
   }
 
-  const isLoadingSummary =
-    summarizeMutation.isPending || summarizeFolderMutation.isPending;
-
-  const activeSummary =
-    summaryMode === "folder" ? summarizeFolderMutation : summarizeMutation;
-
   useSetNavbarNote(trimmed ? undefined : note);
 
   useNoteShortcuts({
@@ -245,8 +200,7 @@ export function NoteDetailPage({
     },
     onCloseModals: () => {
       setOpenDeleteDialog(false);
-      setSummaryDrawerOpen(false);
-      setChatOpen(false);
+      closeChat();
     },
     enabled: !!note && !trimmed,
   });
@@ -319,31 +273,6 @@ export function NoteDetailPage({
           }
         },
       };
-
-  const lunaOptions: LunaActionOption[] = [
-    {
-      id: "summarize-note",
-      label: "Summarize note",
-      onClick: handleSummarizeNote,
-      disabled: isLoadingSummary,
-    },
-    ...(parentFolder
-      ? [
-          {
-            id: "summarize-workspace",
-            label: "Summarize all notes in folder",
-            onClick: handleSummarizeWorkspace,
-            disabled: isLoadingSummary,
-          } satisfies LunaActionOption,
-        ]
-      : []),
-    {
-      id: "ask-luna",
-      label: "Ask Luna",
-      onClick: () => setChatOpen(true),
-      disabled: isLoadingSummary,
-    },
-  ];
 
   const noteBody = (
     <div className="relative min-h-[50vh]">
@@ -470,16 +399,8 @@ export function NoteDetailPage({
 
       {!trimmed && (
         <div className="absolute bottom-5 right-5">
-          <LunaButton options={lunaOptions} isBusy={isLoadingSummary} />
+          <LunaButton onClick={handleOpenChat} />
         </div>
-      )}
-
-      {!trimmed && (
-        <NoteChatPanel
-          note={note}
-          open={chatOpen}
-          onOpenChange={setChatOpen}
-        />
       )}
     </div>
   );
@@ -501,15 +422,6 @@ export function NoteDetailPage({
             <Trash /> Delete
           </ContextMenuItem>
         </ContextMenuContent>
-
-        <SummarizeDrawer
-          title={summaryTitle || note.title}
-          open={summaryDrawerOpen}
-          onOpenChange={setSummaryDrawerOpen}
-          summary={activeSummary.data}
-          error={activeSummary.error?.message ?? null}
-          isPending={activeSummary.isPending}
-        />
       </ContextMenu>
     </>
   );

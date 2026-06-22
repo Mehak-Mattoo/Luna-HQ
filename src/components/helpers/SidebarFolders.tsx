@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
+  ChevronRightIcon,
   FileText,
   Folder,
   MoreHorizontal,
@@ -95,41 +96,33 @@ export function SidebarFolders() {
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupLabel>Favorites</SidebarGroupLabel>
-        <SidebarGroupAction title="New note" asChild>
-        
-        </SidebarGroupAction>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {favoriteNotes.length === 0 ? (
-              <SidebarMenuItem>
-                <SidebarMenuButton disabled className="text-muted-foreground">
-                  <FileText className="size-4 opacity-50" />
-                  <span>No favorites yet</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ) : (
-              favoriteNotes.map((note) => (
-                <SidebarMenuItem key={note.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === notePath(note)}
-                    className="data-[active=true]:bg-accent/10 data-[active=true]:text-accent"
-                  >
-                    <Link href={notePath(note)}>
-                      <FileText className="size-4" />
-                      <span className="truncate">{note.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {favoriteNotes.length > 0 && (
+        <>
+          <SidebarGroup>
+            <SidebarGroupLabel>Favorites</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {favoriteNotes.map((note) => (
+                  <SidebarMenuItem key={note.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === notePath(note)}
+                      className="data-[active=true]:bg-accent/10 data-[active=true]:text-accent"
+                    >
+                      <Link href={notePath(note)}>
+                        <FileText className="size-4" />
+                        <span className="truncate">{note.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-      <SidebarSeparator />
+          <SidebarSeparator />
+        </>
+      )}
 
       <SidebarGroup>
         <SidebarGroupLabel>My Folders</SidebarGroupLabel>
@@ -219,11 +212,11 @@ export function SidebarFolders() {
               <SidebarMenuButton
                 asChild
                 isActive={isAllNotesActive}
-                className="data-[active=true]:bg-accent/20 data-[active=true]:text-accent"
+                className="flex items-center gap-2 hover:bg-accent/10 hover:text-accent/90 justify-between data-[active=true]:bg-accent/20 data-[active=true]:text-accent"
               >
                 <Link href={protectedRoutes.ALL_NOTES}>
-                  <FileText className="size-4" />
                   <span>All Notes</span>
+                  <ChevronRightIcon className="size-4" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
