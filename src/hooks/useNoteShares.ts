@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
+import type { Note } from "./useNotes";
 
 export type SharePermission = "view" | "edit";
 
@@ -168,6 +169,53 @@ export function useUpdateNoteLinkShare() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES] });
+    },
+  });
+}
+
+export type SharedWithMeNote = {
+  shareId: string;
+  permission: "view" | "edit";
+  sharedAt: string;
+  note: Note;
+};
+
+export function useSharedWithMeNotes() {
+  return useQuery({
+    queryKey: [TABLE_KEYS.NOTE_SHARES, "shared-with-me"],
+    queryFn: async (): Promise<SharedWithMeNote[]> => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from(TABLE_KEYS.NOTE_SHARES)
+        .select(
+          `
+          id,
+          permission,
+          created_at,
+          notes (
+            id, title, content, user_id, folder_id, folder_name,
+            is_favorite, attachment_path, attachment_name, attachment_mime,
+            created_at, updated_at, share_token, is_shared, share_permission
+          )
+        `,
+        )
+        .eq("shared_with_user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      return (data ?? [])
+        .filter((row) => row.notes)
+        .map((row) => ({
+          shareId: row.id,
+          permission: row.permission,
+          sharedAt: row.created_at,
+          note: row.notes as unknown as Note,
+        }));
     },
   });
 }

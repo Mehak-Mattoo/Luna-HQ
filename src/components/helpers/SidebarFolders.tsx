@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,6 +86,9 @@ export function SidebarFolders() {
   const isAllNotesActive =
     pathname === protectedRoutes.ALL_NOTES && !activeFolderId;
 
+  const isSharedWithMeActive =
+    pathname === protectedRoutes.SHARED_WITH_ME;
+
   async function handleDeleteFolder(folder: FolderType) {
     try {
       await deleteFolder.mutateAsync(folder.id);
@@ -100,7 +104,7 @@ export function SidebarFolders() {
         <>
           <SidebarGroup>
             <SidebarGroupLabel>Favorites</SidebarGroupLabel>
-            <SidebarGroupContent>
+            <SidebarGroupContent className="max-h-24 overflow-y-auto">
               <SidebarMenu>
                 {favoriteNotes.map((note) => (
                   <SidebarMenuItem key={note.id}>
@@ -217,6 +221,19 @@ export function SidebarFolders() {
                 <Link href={protectedRoutes.ALL_NOTES}>
                   <span>All Notes</span>
                   <ChevronRightIcon className="size-4" />
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isSharedWithMeActive}
+                className="flex items-center gap-2 hover:bg-accent/10 hover:text-accent/90 justify-between data-[active=true]:bg-accent/20 data-[active=true]:text-accent"
+              >
+                <Link href={protectedRoutes.SHARED_WITH_ME}>
+                  {/* <Users className="size-4" /> or Share2 */}
+                  <span>Shared with me</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

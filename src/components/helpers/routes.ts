@@ -5,12 +5,14 @@ export const authRoutes = {
   FORGOT_PASSWORD: "/auth/forgot-password",
   SIGNUP_SUCCESS: "/auth/signup/success",
   AUTH_ERROR: "/auth/error",
+  
 };
 
 export const protectedRoutes = {
   HOME: "/home",
   ALL_NOTES: "/home/notes",
   PROFILE: "/home/profile",
+  SHARED_WITH_ME: "/home/shared",
 };
 
 export const apiRoutes = {
