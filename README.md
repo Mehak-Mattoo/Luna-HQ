@@ -1,23 +1,34 @@
 # AI Workspace
 
-An AI-powered knowledge management workspace inspired by Notion, built to help users capture, organize, and extract insights from their notes.
+A Notion-inspired note-taking app with AI built in. Capture ideas in folders, chat with **Luna** about your notes, share with collaborators or public links, and track AI usage from a personal dashboard.
 
-## Features
+Built with **Next.js**, **Supabase**, and the **Vercel AI SDK** (Google Gemini).
 
-* **Notes Management** – Create, read, update, and delete notes with a clean and responsive interface.
-* **Folder Organization** – Group notes into folders for better structure and navigation.
-* **Favorites System** – Quickly access important notes by marking them as favorites.
-* **AI-Powered Summarization** – Generate concise summaries of lengthy notes using AI, making it easier to review and retain information.
-* **Authentication & Security** – Secure user accounts with protected access to personal workspaces.
-* **Modern User Experience** – Fast, intuitive, and optimized for productivity.
+---
 
-## Tech Stack
+## Overview
 
-* Next.js
-* React
-* TypeScript
-* Supabase (Database, Authentication, Storage)
-* Tailwind CSS
-* AI Integration for note summarization
+AI Workspace is a full-stack knowledge workspace where each note can be organized, favorited, attached with files, summarized, and discussed with an AI assistant. Authentication and data live in Supabase; AI features run through secured API routes with rate limiting.
 
-AI Workspace combines the flexibility of a note-taking application with the power of AI, enabling users to organize information efficiently and turn large amounts of text into actionable insights.
+The app is designed around three ideas:
+
+1. **Notes first** — fast CRUD, folders, favorites, grid/list views, and global search (`⌘K`).
+2. **AI where you work** — Luna opens in a side panel and answers questions grounded in the current note’s content.
+3. **Sharing with control** — invite people by email, copy view-only links, or browse notes shared with you.
+
+---
+
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
+| UI | React 19, [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), Radix UI |
+| Data | [Supabase](https://supabase.com/) (Postgres, Auth, Storage, RLS) |
+| Client state | [TanStack Query](https://tanstack.com/query), React Context |
+| AI | [Vercel AI SDK](https://sdk.vercel.ai/), Google Gemini (`gemini-2.5-flash`) |
+| Rate limiting | [Upstash Redis](https://upstash.com/) |
+| Testing | [Vitest](https://vitest.dev/), Testing Library |
+
+---
