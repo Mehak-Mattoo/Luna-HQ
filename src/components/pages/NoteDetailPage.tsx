@@ -62,7 +62,11 @@ export function NoteDetailPage({
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  const { data: notes = [], isLoading, isError } = useNotes("all", {
+  const {
+    data: notes = [],
+    isLoading,
+    isError,
+  } = useNotes("all", {
     enabled: !initialNote,
   });
   const updateNote = useUpdateNote();
@@ -100,7 +104,7 @@ export function NoteDetailPage({
     if (trimmed || initialNote) return;
     if (!note || folderId === undefined) return;
 
-    if (note.folder_id !== folderId) {
+    if (String(note.folder_id ?? "") !== String(folderId)) {
       router.replace(notePath(note));
     }
   }, [note, folderId, router, trimmed, initialNote]);

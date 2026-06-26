@@ -53,7 +53,7 @@ const searchNotesWithinNotes = async (query: string) => {
     .from(TABLE_KEYS.NOTES)
     .select("*")
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`);
-  
+
   if (error) {
     throw error;
   }
@@ -228,7 +228,6 @@ export function useUploadNoteAttachment() {
   });
 }
 
-
 export const useSearchNotes = (query: string) => {
   return useQuery({
     queryKey: [TABLE_KEYS.NOTES, "searchWithinNotes", query],
@@ -236,5 +235,3 @@ export const useSearchNotes = (query: string) => {
     enabled: query.trim().length >= 2,
   });
 };
-
-

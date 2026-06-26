@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { authRoutes, protectedRoutes } from "@/components/helpers/routes";
+import { Eye, EyeClosed } from "lucide-react";
+import { Progress } from "./ui/progress";
 
 export function SignUpForm({
   className,
@@ -28,6 +30,8 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -92,28 +96,68 @@ export function SignUpForm({
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="relative grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                 </div>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <div className="absolute right-2 top-11 -translate-y-1/2">
+                  {showPassword ? (
+                    <EyeClosed
+                      className="size-4"
+                      onClick={() => setShowPassword(!showPassword)}
+                    />
+                  ) : (
+                    <Eye
+                      className="size-4"
+                      onClick={() => setShowPassword(!showPassword)}
+                    />
+                  )}
+                </div>
+
+                <Progress
+                  value={Math.min(100, (password.length / 6) * 100)}
+                  className="w-full"
+                />
               </div>
-              <div className="grid gap-2">
+              <div className="relative grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="confirm-password">Confirm Password</Label>
                 </div>
                 <Input
                   id="confirm-password"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                />
+                <div className="absolute right-2 top-11 -translate-y-1/2">
+                  {showConfirmPassword ? (
+                    <EyeClosed
+                      className="size-4"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    />
+                  ) : (
+                    <Eye
+                      className="size-4"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    />
+                  )}
+                </div>
+
+                <Progress
+                  value={Math.min(100, (repeatPassword.length / 6) * 100)}
+                  className="w-full"
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
