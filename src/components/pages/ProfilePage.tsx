@@ -142,7 +142,7 @@ export default function ProfilePage() {
                   <div className="relative">
                     <Avatar className="size-24 rounded-xl">
                       <AvatarImage src={displayAvatar} alt={name} />
-                      <AvatarFallback className="rounded-xl bg-primary text-2xl text-primary-foreground">
+                    <AvatarFallback className="rounded-xl bg-accent/60 text-2xl! text-primary-foreground">
                         {getInitials(name || email)}
                       </AvatarFallback>
                     </Avatar>

@@ -86,8 +86,9 @@ export function SidebarFolders() {
   const isAllNotesActive =
     pathname === protectedRoutes.ALL_NOTES && !activeFolderId;
 
-  const isSharedWithMeActive =
-    pathname === protectedRoutes.SHARED_WITH_ME;
+  const isSharedWithMeActive = pathname.startsWith(
+    protectedRoutes.SHARED_WITH_ME,
+  );
 
   async function handleDeleteFolder(folder: FolderType) {
     try {

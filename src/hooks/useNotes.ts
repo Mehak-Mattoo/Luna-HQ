@@ -30,9 +30,16 @@ export interface Note {
 export type NotesFilter = "all" | "uncategorized" | string;
 
 const fetchNotes = async (filter: NotesFilter = "all"): Promise<Note[]> => {
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   let query = supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
+    .eq("user_id", user.id) // ← only owned notes
     .order("created_at", { ascending: false });
 
   if (filter === "uncategorized") {
@@ -49,9 +56,15 @@ const fetchNotes = async (filter: NotesFilter = "all"): Promise<Note[]> => {
 };
 
 const searchNotesWithinNotes = async (query: string) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  
   const { data, error } = await supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
+    .eq("user_id", user.id) // ← only owned notes
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`);
 
   if (error) {

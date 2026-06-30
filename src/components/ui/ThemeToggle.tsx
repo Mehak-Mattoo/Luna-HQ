@@ -15,6 +15,7 @@ export function ThemeToggle() {
           <FieldLabel htmlFor="theme-toggle">Dark Mode</FieldLabel>
         </FieldContent>
         <Switch
+          className="bg-accent/70! hover:bg-accent/60"
           id="theme-toggle"
           checked={theme === "dark"}
           onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}

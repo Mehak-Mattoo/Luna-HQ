@@ -163,7 +163,7 @@ const Navbar = ({ note }: NavbarProps) => {
             <Button variant="ghost" className="h-10 gap-2 px-2">
               <Avatar className="size-8 rounded-lg">
                 <AvatarImage src={profile.avatar} alt={profile.name} />
-                <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
+                <AvatarFallback className="rounded-lg bg-accent/60 text-primary-foreground">
                   {getInitials(profile.name || profile.email)}
                 </AvatarFallback>
               </Avatar>

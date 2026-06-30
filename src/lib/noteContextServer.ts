@@ -21,6 +21,7 @@ export type NoteAccessResult = {
 export type LoadNoteWithAccessOptions = {
   shareToken?: string | null;
   userId?: string | null;
+  userEmail?: string | null;
   requireEdit?: boolean;
 };
 
@@ -38,7 +39,7 @@ export async function loadNoteWithAccess(
   noteId: string | number,
   options: LoadNoteWithAccessOptions = {},
 ): Promise<NoteAccessResult> {
-  const { shareToken, userId, requireEdit = false } = options;
+  const { shareToken, userId, userEmail, requireEdit = false } = options;
 
   const { data: note, error } = await supabase
     .from("notes")
@@ -71,14 +72,12 @@ export async function loadNoteWithAccess(
   }
 
   if (userId) {
-    const { data: share, error: shareError } = await supabase
-      .from(TABLE_KEYS.NOTE_SHARES)
-      .select("permission")
-      .eq("note_id", noteId)
-      .eq("shared_with_user_id", userId)
-      .maybeSingle();
-
-    if (shareError) throw new NoteContextError(shareError.message, 500);
+    const share = await findCollaboratorShare(
+      supabase,
+      noteId,
+      userId,
+      userEmail,
+    );
 
     if (share) {
       const access: NoteAccess = share.permission === "edit" ? "edit" : "view";
@@ -88,6 +87,48 @@ export async function loadNoteWithAccess(
   }
 
   throw new NoteContextError("Forbidden", 403);
+}
+
+/** Link pending email invites to the logged-in user (shared_with_user_id). */
+export async function linkInvitesForUser(
+  supabase: SupabaseClient,
+  userId: string,
+  userEmail: string | null | undefined,
+) {
+  const email = userEmail?.trim().toLowerCase();
+  if (!email) return;
+
+  await supabase
+    .from(TABLE_KEYS.NOTE_SHARES)
+    .update({ shared_with_user_id: userId })
+    .eq("shared_with_email", email)
+    .is("shared_with_user_id", null);
+}
+
+async function findCollaboratorShare(
+  supabase: SupabaseClient,
+  noteId: string | number,
+  userId: string,
+  userEmail?: string | null,
+) {
+  const email = userEmail?.trim().toLowerCase() ?? "";
+
+  let query = supabase
+    .from(TABLE_KEYS.NOTE_SHARES)
+    .select("permission")
+    .eq("note_id", noteId);
+
+  if (email) {
+    query = query.or(
+      `shared_with_user_id.eq.${userId},shared_with_email.eq.${email}`,
+    );
+  } else {
+    query = query.eq("shared_with_user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new NoteContextError(error.message, 500);
+  return data;
 }
 
 export async function loadNoteForUser(

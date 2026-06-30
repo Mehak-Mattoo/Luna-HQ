@@ -41,3 +41,7 @@ export function myNotesPath(folderId?: string | null) {
 export function sharedNotePath(token: string) {
   return `/share/${token}`;
 }
+
+export function sharedWithMeNotePath(noteId: string | number) {
+  return `${protectedRoutes.SHARED_WITH_ME}/${noteId}`;
+}

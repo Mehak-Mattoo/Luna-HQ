@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import type { Note } from "./useNotes";
+import {
+  linkInvitesForUser,
+} from "@/lib/noteContextServer";
 
 export type SharePermission = "view" | "edit";
 
@@ -173,6 +176,15 @@ export function useUpdateNoteLinkShare() {
   });
 }
 
+export async function linkInvitesToCurrentUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await linkInvitesForUser(supabase, user.id, user.email);
+}
+
 export type SharedWithMeNote = {
   shareId: string;
   permission: "view" | "edit";
@@ -189,7 +201,11 @@ export function useSharedWithMeNotes() {
       } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      await linkInvitesToCurrentUser();
+
+      const email = user.email?.trim().toLowerCase() ?? "";
+
+      let query = supabase
         .from(TABLE_KEYS.NOTE_SHARES)
         .select(
           `
@@ -199,12 +215,21 @@ export function useSharedWithMeNotes() {
           notes (
             id, title, content, user_id, folder_id, folder_name,
             is_favorite, attachment_path, attachment_name, attachment_mime,
-            created_at, updated_at, share_token, is_shared, share_permission
+            created_at, share_token, is_shared, share_permission
           )
         `,
         )
-        .eq("shared_with_user_id", user.id)
         .order("created_at", { ascending: false });
+
+      if (email) {
+        query = query.or(
+          `shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`,
+        );
+      } else {
+        query = query.eq("shared_with_user_id", user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

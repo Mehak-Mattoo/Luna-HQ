@@ -49,6 +49,8 @@ type NoteDetailPageProps = {
   trimmed?: boolean;
   initialNote?: Note;
   readOnly?: boolean;
+  /** Note opened from Shared with me — hide owner-only actions */
+  sharedView?: boolean;
 };
 
 export function NoteDetailPage({
@@ -57,6 +59,7 @@ export function NoteDetailPage({
   trimmed = false,
   initialNote,
   readOnly = false,
+  sharedView = false,
 }: NoteDetailPageProps) {
   const router = useRouter();
 
@@ -195,7 +198,7 @@ export function NoteDetailPage({
     }
   }
 
-  useSetNavbarNote(trimmed ? undefined : note);
+  useSetNavbarNote(trimmed || sharedView ? undefined : note);
 
   useNoteShortcuts({
     onDelete: () => setOpenDeleteDialog(true),
@@ -206,7 +209,7 @@ export function NoteDetailPage({
       setOpenDeleteDialog(false);
       closeChat();
     },
-    enabled: !!note && !trimmed,
+    enabled: !!note && !trimmed && !sharedView,
   });
 
   if (!initialNote && isLoading) {
@@ -231,7 +234,15 @@ export function NoteDetailPage({
     return (
       <div>
         <p>Note not found.</p>
-        {!trimmed && <Link href={protectedRoutes.ALL_NOTES}>Back</Link>}
+        {!trimmed && (
+          <Link
+            href={
+              sharedView ? protectedRoutes.SHARED_WITH_ME : protectedRoutes.ALL_NOTES
+            }
+          >
+            Back
+          </Link>
+        )}
       </div>
     );
   }
@@ -295,7 +306,7 @@ export function NoteDetailPage({
         </div>
       </div>
 
-      {!trimmed && (
+      {!trimmed && !sharedView && (
         <div className="mt-4">
           <input
             ref={attachmentInputRef}
@@ -366,7 +377,7 @@ export function NoteDetailPage({
         </p>
       )}
 
-      {!trimmed && openDeleteDialog && (
+      {!trimmed && !sharedView && openDeleteDialog && (
         <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
           <DialogContent showCloseButton={false}>
             <DialogHeader>
@@ -409,7 +420,7 @@ export function NoteDetailPage({
     </div>
   );
 
-  if (trimmed) {
+  if (trimmed || sharedView) {
     return <>{noteBody}</>;
   }
 
