@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -28,6 +29,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +43,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
+      queryClient.clear();
       router.push(protectedRoutes.HOME);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");

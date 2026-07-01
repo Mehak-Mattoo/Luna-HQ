@@ -1,19 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
-import { createClient } from "@/lib/client";
 import { Button } from "@/components/ui/button";
-import { authRoutes } from "@/components/helpers/routes";
+import { useSignOut } from "@/hooks/useSignOut";
 
 export function LogoutButton() {
-  const router = useRouter();
+  const signOut = useSignOut();
 
-  const logout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push(authRoutes.LOGIN);
-  };
-
-  return <Button onClick={logout}>Logout</Button>;
+  return <Button onClick={signOut}>Logout</Button>;
 }

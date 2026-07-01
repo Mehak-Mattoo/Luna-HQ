@@ -104,7 +104,7 @@ function PersonRow({
 
       <div className="min-w-0 flex-1">
         <h6 className="truncate font-medium">{name || email}</h6>
-        <h6 className="truncate text-muted-foreground">{email}</h6>
+        <span className="truncate text-muted-foreground">{email}</span>
       </div>
 
       {isOwner ? (
@@ -115,10 +115,10 @@ function PersonRow({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 shrink-0 gap-1 px-2 text-sm text-muted-foreground"
+              className="h-8 shrink-0 gap-1 p-0! text-xs! text-muted-foreground"
             >
               {permLabel}
-              <ChevronDown className="size-3.5 opacity-60" />
+              <ChevronDown className="size-3 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -131,13 +131,13 @@ function PersonRow({
                 className="flex flex-col items-start gap-0.5 py-2"
                 onClick={() => onPermissionChange?.(option.value)}
               >
-                <span className="flex w-full items-center justify-between text-sm">
+                <span className="flex w-full items-center justify-between">
                   {option.label}
                   {permission === option.value && (
                     <Check className="size-4 text-primary" />
                   )}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className=" text-muted-foreground">
                   {option.description}
                 </span>
               </DropdownMenuItem>
@@ -148,8 +148,8 @@ function PersonRow({
               className="gap-2"
               onClick={onRemove}
             >
-              <Trash2 className="size-4" />
-              Remove
+              <Trash2 className="size-3" />
+              <span>Remove access</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -259,23 +259,53 @@ export function ShareNoteDialog({
             ) : (
               shares.map((share) => (
                 <PersonRow
-                  key={share.id}
+                  key={share.id ?? share.shared_with_email}
                   name={share.shared_with_email.split("@")[0]}
                   email={share.shared_with_email}
                   permission={share.permission}
                   permissionLabel={permissionLabel(share.permission)}
                   onPermissionChange={(permission) => {
-                    void updatePermission.mutateAsync({
-                      shareId: share.id,
-                      noteId: note.id,
-                      permission,
-                    });
+                    void updatePermission.mutateAsync(
+                      {
+                        noteId: note.id,
+                        sharedWithEmail: share.shared_with_email,
+                        permission,
+                      },
+                      {
+                        onSuccess: () => {
+                          toast.success(
+                            `Updated access to ${permissionLabel(permission)}`,
+                          );
+                        },
+                        onError: (err) => {
+                          toast.error(
+                            err instanceof Error
+                              ? err.message
+                              : "Failed to update permission",
+                          );
+                        },
+                      },
+                    );
                   }}
                   onRemove={() => {
-                    void removeShare.mutateAsync({
-                      shareId: share.id,
-                      noteId: note.id,
-                    });
+                    void removeShare.mutateAsync(
+                      {
+                        noteId: note.id,
+                        sharedWithEmail: share.shared_with_email,
+                      },
+                      {
+                        onSuccess: () => {
+                          toast.success("Removed access");
+                        },
+                        onError: (err) => {
+                          toast.error(
+                            err instanceof Error
+                              ? err.message
+                              : "Failed to remove access",
+                          );
+                        },
+                      },
+                    );
                   }}
                 />
               ))

@@ -125,7 +125,7 @@ const ACTIVITY_ICONS = {
 
 export default function HomePage() {
   const router = useRouter();
-  const { openChat } = useNoteChatPanel();
+  const { openChat, isOpen } = useNoteChatPanel();
   const [openAddFolder, setOpenAddFolder] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userName, setUserName] = useState("");
@@ -327,7 +327,12 @@ export default function HomePage() {
               </h6>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div
+            className={cn(
+              "grid grid-cols-1 gap-2",
+              !isOpen && "sm:grid-cols-2",
+            )}
+          >
             {[
               {
                 label: "Summarize today's notes",

@@ -2,6 +2,7 @@ export const TABLE_KEYS = {
   NOTES: "notes",
   FOLDERS: "folders",
   NOTE_SHARES: "shared_notes",
+  NOTE_FAVORITES: "note_favorites",
   AI_ACTIONS: "ai_actions",
 };
 

@@ -3,7 +3,7 @@ export const authRoutes = {
   SIGNUP: "/auth/sign-up",
   UPDATE_PASSWORD: "/auth/update-password",
   FORGOT_PASSWORD: "/auth/forgot-password",
-  SIGNUP_SUCCESS: "/auth/signup/success",
+  SIGNUP_SUCCESS: "/auth/sign-up-success",
   AUTH_ERROR: "/auth/error",
   
 };

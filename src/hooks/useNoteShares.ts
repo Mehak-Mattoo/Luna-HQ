@@ -5,11 +5,15 @@ import type { Note } from "./useNotes";
 import {
   linkInvitesForUser,
 } from "@/lib/noteContextServer";
+import {
+  fetchFavoriteNoteIds,
+  withFavoriteState,
+} from "@/hooks/useNoteFavorites";
 
 export type SharePermission = "view" | "edit";
 
 export type NoteShare = {
-  id: string;
+  id: string | null;
   note_id: string | number;
   owner_id: string;
   shared_with_email: string;
@@ -18,20 +22,41 @@ export type NoteShare = {
   created_at: string;
 };
 
+function isValidNoteId(
+  noteId: string | number | undefined | null,
+): noteId is string | number {
+  if (noteId === null || noteId === undefined || noteId === "") return false;
+  if (noteId === "null" || noteId === "undefined") return false;
+  const n = typeof noteId === "number" ? noteId : Number(noteId);
+  return Number.isFinite(n);
+}
+
+/** Coerce note id for Postgres bigint columns (avoids eq.null / string "null"). */
+export function normalizeNoteId(noteId: string | number): number {
+  if (!isValidNoteId(noteId)) {
+    throw new Error("Invalid note id");
+  }
+  return typeof noteId === "number" ? noteId : Number(noteId);
+}
+
 export function useNoteShares(noteId: string | number | undefined) {
+  const normalizedId = isValidNoteId(noteId)
+    ? normalizeNoteId(noteId)
+    : null;
+
   return useQuery({
-    queryKey: [TABLE_KEYS.NOTE_SHARES, noteId],
+    queryKey: [TABLE_KEYS.NOTE_SHARES, normalizedId],
     queryFn: async (): Promise<NoteShare[]> => {
       const { data, error } = await supabase
         .from(TABLE_KEYS.NOTE_SHARES)
         .select("*")
-        .eq("note_id", noteId)
+        .eq("note_id", normalizedId!)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
       return data ?? [];
     },
-    enabled: noteId !== undefined && noteId !== "",
+    enabled: normalizedId !== null,
   });
 }
 
@@ -59,7 +84,7 @@ export function useInviteToNote() {
       const { data, error } = await supabase
         .from(TABLE_KEYS.NOTE_SHARES)
         .insert({
-          note_id: noteId,
+          note_id: normalizeNoteId(noteId),
           owner_id: user.id,
           shared_with_email: trimmed,
           permission,
@@ -72,7 +97,7 @@ export function useInviteToNote() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: [TABLE_KEYS.NOTE_SHARES, variables.noteId],
+        queryKey: [TABLE_KEYS.NOTE_SHARES, normalizeNoteId(variables.noteId)],
       });
     },
   });
@@ -83,27 +108,37 @@ export function useUpdateSharePermission() {
 
   return useMutation({
     mutationFn: async ({
-      shareId,
       noteId,
+      sharedWithEmail,
       permission,
     }: {
-      shareId: string;
       noteId: string | number;
+      sharedWithEmail: string;
       permission: SharePermission;
     }) => {
+      const email = sharedWithEmail.trim().toLowerCase();
+      if (!email) throw new Error("Invalid collaborator email");
+
       const { data, error } = await supabase
         .from(TABLE_KEYS.NOTE_SHARES)
         .update({ permission })
-        .eq("id", shareId)
+        .eq("note_id", normalizeNoteId(noteId))
+        .eq("shared_with_email", email)
         .select()
         .single();
 
       if (error) throw error;
-      return { data, noteId };
+      return { data, noteId: normalizeNoteId(noteId) };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({
         queryKey: [TABLE_KEYS.NOTE_SHARES, result.noteId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [TABLE_KEYS.NOTE_SHARES, "access", result.noteId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [TABLE_KEYS.NOTE_SHARES, "shared-with-me"],
       });
     },
   });
@@ -114,23 +149,33 @@ export function useRemoveShare() {
 
   return useMutation({
     mutationFn: async ({
-      shareId,
       noteId,
+      sharedWithEmail,
     }: {
-      shareId: string;
       noteId: string | number;
+      sharedWithEmail: string;
     }) => {
+      const email = sharedWithEmail.trim().toLowerCase();
+      if (!email) throw new Error("Invalid collaborator email");
+
       const { error } = await supabase
         .from(TABLE_KEYS.NOTE_SHARES)
         .delete()
-        .eq("id", shareId);
+        .eq("note_id", normalizeNoteId(noteId))
+        .eq("shared_with_email", email);
 
       if (error) throw error;
-      return { noteId };
+      return { noteId: normalizeNoteId(noteId) };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({
         queryKey: [TABLE_KEYS.NOTE_SHARES, result.noteId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [TABLE_KEYS.NOTE_SHARES, "access", result.noteId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [TABLE_KEYS.NOTE_SHARES, "shared-with-me"],
       });
     },
   });
@@ -163,7 +208,7 @@ export function useUpdateNoteLinkShare() {
       const { data, error } = await supabase
         .from("notes")
         .update(payload)
-        .eq("id", noteId)
+        .eq("id", normalizeNoteId(noteId))
         .select()
         .single();
 
@@ -183,6 +228,53 @@ export async function linkInvitesToCurrentUser() {
   if (!user) return;
 
   await linkInvitesForUser(supabase, user.id, user.email);
+}
+
+async function fetchCollaboratorPermission(
+  noteId: string | number,
+): Promise<SharePermission | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !isValidNoteId(noteId)) return null;
+
+  const normalizedId = normalizeNoteId(noteId);
+
+  const { data: byUserId, error: byUserIdError } = await supabase
+    .from(TABLE_KEYS.NOTE_SHARES)
+    .select("permission")
+    .eq("note_id", normalizedId)
+    .eq("shared_with_user_id", user.id)
+    .maybeSingle();
+
+  if (byUserIdError) throw byUserIdError;
+  if (byUserId?.permission) return byUserId.permission;
+
+  const email = user.email?.trim().toLowerCase() ?? "";
+  if (!email) return null;
+
+  const { data: byEmail, error: byEmailError } = await supabase
+    .from(TABLE_KEYS.NOTE_SHARES)
+    .select("permission")
+    .eq("note_id", normalizedId)
+    .eq("shared_with_email", email)
+    .maybeSingle();
+
+  if (byEmailError) throw byEmailError;
+  return byEmail?.permission ?? null;
+}
+
+/** Live collaborator permission for a shared note (client-side refresh). */
+export function useCollaboratorAccess(noteId: string | number | undefined) {
+  const normalizedId = isValidNoteId(noteId)
+    ? normalizeNoteId(noteId)
+    : null;
+
+  return useQuery({
+    queryKey: [TABLE_KEYS.NOTE_SHARES, "access", normalizedId],
+    queryFn: () => fetchCollaboratorPermission(normalizedId!),
+    enabled: normalizedId !== null,
+  });
 }
 
 export type SharedWithMeNote = {
@@ -233,13 +325,18 @@ export function useSharedWithMeNotes() {
 
       if (error) throw error;
 
+      const favoriteIds = await fetchFavoriteNoteIds(user.id);
+
       return (data ?? [])
         .filter((row) => row.notes)
         .map((row) => ({
           shareId: row.id,
           permission: row.permission,
           sharedAt: row.created_at,
-          note: row.notes as unknown as Note,
+          note: withFavoriteState(
+            [row.notes as unknown as Note],
+            favoriteIds,
+          )[0],
         }));
     },
   });

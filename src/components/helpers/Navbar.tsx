@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, Link2, Link2Icon, LogOut, Share, Share2, Star } from "lucide-react";
+import { ChevronDown, LogOut, Share2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "./constants";
-import { authRoutes, myNotesPath, protectedRoutes } from "./routes";
-import { Note, useUpdateNote } from "@/hooks/useNotes";
+import { myNotesPath, protectedRoutes } from "./routes";
+import type { Note } from "@/hooks/useNotes";
+import { useToggleFavorite } from "@/hooks/useNoteFavorites";
+import { useSignOut } from "@/hooks/useSignOut";
 import { getProfileFromUser } from "@/lib/profileUtils";
 import { supabase } from "@/lib/supabase";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -35,8 +37,8 @@ type NavbarProps = {
 };
 
 const Navbar = ({ note }: NavbarProps) => {
-  const router = useRouter();
-  const updateNote = useUpdateNote();
+  const toggleFavorite = useToggleFavorite();
+  const signOut = useSignOut();
   const [profile, setProfile] = useState({ name: "", email: "", avatar: "" });
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -51,21 +53,13 @@ const Navbar = ({ note }: NavbarProps) => {
     });
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push(authRoutes.LOGIN);
-  };
-
   const handleFavorite = () => {
     if (!note) return;
 
     const nextFavorite = !note.is_favorite;
 
-    updateNote.mutate(
-      {
-        ...note,
-        is_favorite: nextFavorite,
-      },
+    toggleFavorite.mutate(
+      { noteId: note.id, favorited: nextFavorite },
       {
         onSuccess: () => {
           toast.success(
@@ -187,7 +181,7 @@ const Navbar = ({ note }: NavbarProps) => {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={handleSignOut}
+              onClick={signOut}
             >
               <LogOut className="size-4" />
               Log out

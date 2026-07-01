@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users } from "lucide-react";
 
 import { formatUIFriendlyDate } from "@/components/helpers/constants";
 import {
@@ -39,7 +38,7 @@ function SharedNoteCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
+      className="group flex h-full w-full flex-col rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="line-clamp-2 font-medium leading-snug">
@@ -47,7 +46,7 @@ function SharedNoteCard({
         </p>
         <span
           className={cn(
-            "shrink-0 rounded-full px-2 py-0.5 text-xs ring-1",
+            "shrink-0 rounded-full px-2 py-0.5 ring-1",
             permission === "edit"
               ? "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20"
               : "bg-muted text-muted-foreground ring-border",
@@ -75,10 +74,7 @@ export function SharedWithMePage() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2">
-          <Users className="size-5 text-accent" />
-          <h1 className="text-xl font-semibold">Shared with me</h1>
-        </div>
+       
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <SharedNoteCardSkeleton key={i} />
@@ -91,7 +87,7 @@ export function SharedWithMePage() {
   if (isError) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold">Shared with me</h1>
+        <h3 className="text-xl font-semibold">Shared with me</h3>
         <p className="text-destructive">Failed to load shared notes.</p>
         <Link
           href={protectedRoutes.ALL_NOTES}
@@ -106,10 +102,7 @@ export function SharedWithMePage() {
   if (sharedNotes.length === 0) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2">
-          
-          <h3 className="text-xl font-semibold">Shared with me</h3>
-        </div>
+      
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
           <h3 className="text-lg font-semibold">No shared notes yet</h3>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">

@@ -111,6 +111,35 @@ describe("loadNoteWithAccess", () => {
     expect(result.access).toBe("view");
   });
 
+  it("returns edit access for collaborator with edit permission", async () => {
+    const supabase = mockSupabase({
+      note: {
+        id: 1,
+        user_id: "owner-id",
+        title: "Shared note",
+        content: "Secret",
+        is_favorite: false,
+        attachment_path: null,
+        attachment_name: null,
+        attachment_mime: null,
+        folder_id: null,
+        folder_name: null,
+        created_at: "2026-06-20T10:00:00.000Z",
+        share_token: null,
+        is_shared: false,
+        share_permission: "private",
+      },
+      shareRow: { permission: "edit" },
+    });
+
+    const result = await loadNoteWithAccess(supabase, 1, {
+      userId: "collaborator-id",
+      userEmail: "b@example.com",
+    });
+
+    expect(result.access).toBe("edit");
+  });
+
   it("throws Forbidden when user is not owner and has no share permission", async () => {
     const supabase = mockSupabase({
       note: {

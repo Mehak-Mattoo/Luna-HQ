@@ -9,6 +9,8 @@ import {
 } from "@/lib/noteContextServer";
 import { createClient } from "@/lib/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function SharedWithMeNotePage({
   params,
 }: {
@@ -39,7 +41,8 @@ export default async function SharedWithMeNotePage({
       <NoteDetailPage
         noteId={noteId}
         initialNote={note}
-        readOnly={access === "view"}
+        access={access}
+        readOnly={access !== "edit"}
         sharedView
       />
     );

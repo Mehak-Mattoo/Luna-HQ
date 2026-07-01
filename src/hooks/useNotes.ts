@@ -2,6 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { BUCKET } from "@/components/helpers/constants";
+import { buildIlikeOrFilter } from "@/lib/postgrestSearch";
+import {
+  fetchFavoriteNoteIds,
+  withFavoriteState,
+} from "@/hooks/useNoteFavorites";
 
 export type NoteFormPayload = {
   title: string;
@@ -52,7 +57,29 @@ const fetchNotes = async (filter: NotesFilter = "all"): Promise<Note[]> => {
   if (error) {
     throw error;
   }
-  return data ?? [];
+
+  const favoriteIds = await fetchFavoriteNoteIds(user.id);
+  return withFavoriteState(data ?? [], favoriteIds) as Note[];
+};
+
+const fetchNoteById = async (noteId: string): Promise<Note | null> => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from(TABLE_KEYS.NOTES)
+    .select("*")
+    .eq("id", noteId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const favoriteIds = await fetchFavoriteNoteIds(user.id);
+  return withFavoriteState([data], favoriteIds)[0] as Note;
 };
 
 const searchNotesWithinNotes = async (query: string) => {
@@ -61,16 +88,21 @@ const searchNotesWithinNotes = async (query: string) => {
   } = await supabase.auth.getUser();
   if (!user) return [];
   
+  const orFilter = buildIlikeOrFilter(["title", "content"], query);
+  if (!orFilter) return [];
+
   const { data, error } = await supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
-    .eq("user_id", user.id) // ← only owned notes
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%`);
+    .eq("user_id", user.id)
+    .or(orFilter);
 
   if (error) {
     throw error;
   }
-  return data;
+
+  const favoriteIds = await fetchFavoriteNoteIds(user.id);
+  return withFavoriteState(data ?? [], favoriteIds) as Note[];
 };
 
 export function useNotes(
@@ -81,6 +113,17 @@ export function useNotes(
     queryKey: [TABLE_KEYS.NOTES, filter],
     queryFn: () => fetchNotes(filter),
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useNote(
+  noteId: string,
+  options?: { enabled?: boolean },
+) {
+  return useQuery<Note | null>({
+    queryKey: [TABLE_KEYS.NOTES, "detail", noteId],
+    queryFn: () => fetchNoteById(noteId),
+    enabled: (options?.enabled ?? true) && noteId.length > 0,
   });
 }
 
@@ -138,7 +181,6 @@ export function useUpdateNote() {
           content: note.content,
           folder_id: note.folder_id ?? null,
           folder_name: note.folder_name ?? null,
-          is_favorite: note.is_favorite,
         })
         .eq("id", note.id)
         .select();

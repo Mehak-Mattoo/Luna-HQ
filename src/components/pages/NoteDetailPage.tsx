@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  useNotes,
+  useNote,
   useUpdateNote,
   useDeleteNote,
   useUploadNoteAttachment,
@@ -42,6 +42,8 @@ import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
 import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { cn, stripScriptTags } from "@/lib/utils";
 import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
+import { useCollaboratorAccess } from "@/hooks/useNoteShares";
+import type { NoteAccess } from "@/lib/noteContextServer";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -49,6 +51,8 @@ type NoteDetailPageProps = {
   trimmed?: boolean;
   initialNote?: Note;
   readOnly?: boolean;
+  /** Resolved access from server (owner / view / edit). */
+  access?: NoteAccess;
   /** Note opened from Shared with me — hide owner-only actions */
   sharedView?: boolean;
 };
@@ -59,17 +63,23 @@ export function NoteDetailPage({
   trimmed = false,
   initialNote,
   readOnly = false,
+  access,
   sharedView = false,
 }: NoteDetailPageProps) {
   const router = useRouter();
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [sharedNote, setSharedNote] = useState<Note | undefined>(initialNote);
+
+  const { data: collaboratorPermission } = useCollaboratorAccess(
+    sharedView ? noteId : undefined,
+  );
 
   const {
-    data: notes = [],
+    data: fetchedNote,
     isLoading,
     isError,
-  } = useNotes("all", {
+  } = useNote(noteId, {
     enabled: !initialNote,
   });
   const updateNote = useUpdateNote();
@@ -82,8 +92,20 @@ export function NoteDetailPage({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const contentRef = useRef<HTMLParagraphElement>(null);
 
-  const note = initialNote ?? notes?.find((n) => String(n.id) === noteId);
-  const isReadOnly = readOnly || trimmed;
+  const note = sharedView
+    ? (sharedNote ?? initialNote)
+    : (initialNote ?? fetchedNote ?? undefined);
+
+  const canEditShared =
+    collaboratorPermission === "edit" ||
+    (collaboratorPermission === undefined && access === "edit");
+
+  const isReadOnly =
+    trimmed || (sharedView ? !canEditShared : readOnly);
+
+  useEffect(() => {
+    if (initialNote) setSharedNote(initialNote);
+  }, [initialNote]);
 
   useEffect(() => {
     closeChat();
@@ -165,8 +187,12 @@ export function NoteDetailPage({
         });
       }
 
-      const saved = updated?.[0] ?? { ...note, title, content };
-      router.replace(notePath(saved));
+      const saved = (updated?.[0] ?? { ...note, title, content }) as Note;
+      if (sharedView) {
+        setSharedNote(saved);
+      } else {
+        router.replace(notePath(saved));
+      }
     } catch {
       setSubmitError("Failed to save note or attachment.");
     }
@@ -224,7 +250,7 @@ export function NoteDetailPage({
   if (!initialNote && isError) {
     return (
       <div>
-        <p>Failed to load notes.</p>
+        <p>Failed to load note.</p>
         <Link href={protectedRoutes.ALL_NOTES}>Back</Link>
       </div>
     );

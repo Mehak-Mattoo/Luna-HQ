@@ -51,14 +51,19 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/${protectedRoutes.HOME}`,
+          emailRedirectTo: `${window.location.origin}${protectedRoutes.HOME}`,
           data: {
             full_name: name.trim(),
           },
         },
       });
-      if (error) throw error;
-      router.push(protectedRoutes.HOME);
+      if (error) {
+        setError(error);
+        // router.push(authRoutes.AUTH_ERROR);
+
+      }
+      router.push(authRoutes.SIGNUP_SUCCESS);
+      // router.push(protectedRoutes.HOME);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     }

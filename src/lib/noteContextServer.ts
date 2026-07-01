@@ -44,7 +44,7 @@ export async function loadNoteWithAccess(
   const { data: note, error } = await supabase
     .from("notes")
     .select(NOTE_COLUMNS)
-    .eq("id", noteId)
+    .eq("id", typeof noteId === "number" ? noteId : Number(noteId))
     .maybeSingle();
 
   if (error) throw new NoteContextError(error.message, 500);
@@ -111,24 +111,31 @@ async function findCollaboratorShare(
   userId: string,
   userEmail?: string | null,
 ) {
-  const email = userEmail?.trim().toLowerCase() ?? "";
+  const normalizedNoteId =
+    typeof noteId === "number" ? noteId : Number(noteId);
 
-  let query = supabase
+  const { data: byUserId, error: byUserIdError } = await supabase
     .from(TABLE_KEYS.NOTE_SHARES)
     .select("permission")
-    .eq("note_id", noteId);
+    .eq("note_id", normalizedNoteId)
+    .eq("shared_with_user_id", userId)
+    .maybeSingle();
 
-  if (email) {
-    query = query.or(
-      `shared_with_user_id.eq.${userId},shared_with_email.eq.${email}`,
-    );
-  } else {
-    query = query.eq("shared_with_user_id", userId);
-  }
+  if (byUserIdError) throw new NoteContextError(byUserIdError.message, 500);
+  if (byUserId) return byUserId;
 
-  const { data, error } = await query.maybeSingle();
-  if (error) throw new NoteContextError(error.message, 500);
-  return data;
+  const email = userEmail?.trim().toLowerCase() ?? "";
+  if (!email) return null;
+
+  const { data: byEmail, error: byEmailError } = await supabase
+    .from(TABLE_KEYS.NOTE_SHARES)
+    .select("permission")
+    .eq("note_id", normalizedNoteId)
+    .eq("shared_with_email", email)
+    .maybeSingle();
+
+  if (byEmailError) throw new NoteContextError(byEmailError.message, 500);
+  return byEmail;
 }
 
 export async function loadNoteForUser(

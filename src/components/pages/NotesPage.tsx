@@ -10,10 +10,10 @@ import { Button } from "../ui/button";
 import {
   useCreateNote,
   useNotes,
-  useUpdateNote,
   type Note,
   type NotesFilter,
 } from "@/hooks/useNotes";
+import { useToggleFavorite } from "@/hooks/useNoteFavorites";
 import { useFolders } from "@/hooks/useFolders";
 import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { LunaButton } from "../ui/LunaButton";
@@ -42,6 +42,19 @@ type NoteCardProps = {
 
 function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
   const tagStyle = folderName ? getFolderTagStyle(folderName) : null;
+  const toggleFavorite = useToggleFavorite();
+
+  const handleFavorite = (
+    event: React.MouseEvent<SVGSVGElement>,
+    targetNote: Note,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleFavorite.mutate({
+      noteId: targetNote.id,
+      favorited: !targetNote.is_favorite,
+    });
+  };
 
   if (viewMode === "list") {
     return (
@@ -83,19 +96,6 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
       </button>
     );
   }
-
-  const handleFavorite = async (
-    event: React.MouseEvent<SVGSVGElement>,
-    note: Note,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    await updateNote.mutateAsync({
-      ...note,
-      is_favorite: !note.is_favorite ? true : false,
-    });
-  };
-  const updateNote = useUpdateNote();
 
   return (
     <button

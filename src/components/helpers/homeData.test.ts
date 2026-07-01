@@ -5,7 +5,7 @@ import {
   getLunaSuggestions,
   getRecentNotes,
 } from "./homeData";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 function mockNote(overrides: Partial<Note> = {}): Note {
   return {
@@ -75,6 +75,9 @@ describe("homeData", () => {
     });
 
   it("countSince counts notes created in the last week", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-20T12:00:00.000Z"));
+
     const notes = [
       mockNote({ created_at: "2026-06-20T10:00:00.000Z" }),
       mockNote({ created_at: "2026-06-09T10:00:00.000Z" }),
@@ -82,5 +85,7 @@ describe("homeData", () => {
     ];
     const result = countSince(notes);
     expect(result).toBe(1);
+
+    vi.useRealTimers();
   });
 });
