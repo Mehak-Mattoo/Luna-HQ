@@ -4,6 +4,7 @@ export const TABLE_KEYS = {
   NOTE_SHARES: "shared_notes",
   NOTE_FAVORITES: "note_favorites",
   AI_ACTIONS: "ai_actions",
+  NOTIFICATIONS: "notifications",
 };
 
 export const LUNA = "Luna";

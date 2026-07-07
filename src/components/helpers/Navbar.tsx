@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useFolders } from "@/hooks/useFolders";
 import { ShareNoteDialog } from "@/components/modals/ShareNoteDialog";
+import { NotificationSystem } from "@/components/helpers/NotificationSystem";
 
 type NavbarProps = {
   note?: Note;
@@ -41,7 +42,6 @@ const Navbar = ({ note }: NavbarProps) => {
   const signOut = useSignOut();
   const [profile, setProfile] = useState({ name: "", email: "", avatar: "" });
   const [shareOpen, setShareOpen] = useState(false);
-
   const { data: folders = [] } = useFolders();
   const parentFolder = note?.folder_id
     ? (folders.find((f) => f.id === note.folder_id) ?? null)
@@ -151,6 +151,9 @@ const Navbar = ({ note }: NavbarProps) => {
             />
           </>
         )}
+
+
+        <NotificationSystem />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
