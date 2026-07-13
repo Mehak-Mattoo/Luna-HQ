@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 
 export const NOTE_FAVORITES_QUERY_KEY = [TABLE_KEYS.NOTE_FAVORITES] as const;
 
@@ -29,20 +30,18 @@ export function withFavoriteState<T extends { id: string | number }>(
 }
 
 export function useFavoriteNoteIds() {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery({
-    queryKey: NOTE_FAVORITES_QUERY_KEY,
-    queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return new Set<string>();
-      return fetchFavoriteNoteIds(user.id);
-    },
+    queryKey: [...NOTE_FAVORITES_QUERY_KEY, userId],
+    queryFn: () => fetchFavoriteNoteIds(userId!),
+    enabled: !authLoading && !!userId,
   });
 }
 
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -52,14 +51,11 @@ export function useToggleFavorite() {
       noteId: string | number;
       favorited: boolean;
     }) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!userId) throw new Error("Not authenticated");
 
       if (favorited) {
         const { error } = await supabase.from(TABLE_KEYS.NOTE_FAVORITES).upsert(
-          { user_id: user.id, note_id: noteId },
+          { user_id: userId, note_id: noteId },
           { onConflict: "user_id,note_id" },
         );
         if (error) throw error;
@@ -67,14 +63,13 @@ export function useToggleFavorite() {
         const { error } = await supabase
           .from(TABLE_KEYS.NOTE_FAVORITES)
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("note_id", noteId);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: NOTE_FAVORITES_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES] });
     },
   });
 }

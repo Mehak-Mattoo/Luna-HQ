@@ -13,7 +13,7 @@ import {
   type Note,
   type NotesFilter,
 } from "@/hooks/useNotes";
-import { useToggleFavorite } from "@/hooks/useNoteFavorites";
+import { useToggleFavorite, useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
 import { useFolders } from "@/hooks/useFolders";
 import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { LunaButton } from "../ui/LunaButton";
@@ -177,7 +177,13 @@ const NotesPage = () => {
 
   const notesFilter: NotesFilter = folderId ?? "all";
   const { data: notes = [], isLoading, isError, error } = useNotes(notesFilter);
+  const { data: favoriteIds = new Set<string>() } = useFavoriteNoteIds();
   const { data: folders = [] } = useFolders();
+
+  const notesWithFavorites = useMemo(
+    () => withFavoriteState(notes, favoriteIds) as Note[],
+    [notes, favoriteIds],
+  );
 
   const activeFolder = folders.find((f) => f.id === folderId) ?? null;
 
@@ -197,13 +203,13 @@ const NotesPage = () => {
 
   const filteredNotes = useMemo(() => {
     if (activeTab === "notes") {
-      return notes.filter((n) => !n.attachment_path);
+      return notesWithFavorites.filter((n) => !n.attachment_path);
     }
     if (activeTab === "files") {
-      return notes.filter((n) => n.attachment_path);
+      return notesWithFavorites.filter((n) => n.attachment_path);
     }
-    return notes;
-  }, [notes, activeTab]);
+    return notesWithFavorites;
+  }, [notesWithFavorites, activeTab]);
 
   async function handleCreateClick() {
     const createdNote = await createNote.mutateAsync({

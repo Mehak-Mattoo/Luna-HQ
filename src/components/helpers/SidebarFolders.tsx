@@ -40,6 +40,7 @@ import {
   type Folder as FolderType,
 } from "@/hooks/useFolders";
 import { useNotes } from "@/hooks/useNotes";
+import { useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
 
 function notesHref(folderId?: string, create?: boolean) {
   const params = new URLSearchParams();
@@ -57,6 +58,12 @@ export function SidebarFolders() {
   const activeFolderId = searchParams.get("folder");
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
   const { data: allNotes = [] } = useNotes("all");
+  const { data: favoriteIds = new Set<string>() } = useFavoriteNoteIds();
+
+  const notesWithFavorites = useMemo(
+    () => withFavoriteState(allNotes, favoriteIds),
+    [allNotes, favoriteIds],
+  );
 
   const deleteFolder = useDeleteFolder();
 
@@ -79,8 +86,8 @@ export function SidebarFolders() {
   }
 
   const favoriteNotes = useMemo(
-    () => allNotes.filter((note) => note.is_favorite),
-    [allNotes],
+    () => notesWithFavorites.filter((note) => note.is_favorite),
+    [notesWithFavorites],
   );
 
   const isAllNotesActive =

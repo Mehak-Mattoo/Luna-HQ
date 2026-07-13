@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, LogOut, Share2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { getInitials } from "./constants";
@@ -11,7 +11,7 @@ import type { Note } from "@/hooks/useNotes";
 import { useToggleFavorite } from "@/hooks/useNoteFavorites";
 import { useSignOut } from "@/hooks/useSignOut";
 import { getProfileFromUser } from "@/lib/profileUtils";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
@@ -40,18 +40,13 @@ type NavbarProps = {
 const Navbar = ({ note }: NavbarProps) => {
   const toggleFavorite = useToggleFavorite();
   const signOut = useSignOut();
-  const [profile, setProfile] = useState({ name: "", email: "", avatar: "" });
+  const { user } = useAuth();
+  const profile = useMemo(() => getProfileFromUser(user), [user]);
   const [shareOpen, setShareOpen] = useState(false);
   const { data: folders = [] } = useFolders();
   const parentFolder = note?.folder_id
     ? (folders.find((f) => f.id === note.folder_id) ?? null)
     : null;
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setProfile(getProfileFromUser(user));
-    });
-  }, []);
 
   const handleFavorite = () => {
     if (!note) return;

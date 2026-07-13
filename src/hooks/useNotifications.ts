@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 
 export const NOTIFICATIONS_QUERY_KEY = [TABLE_KEYS.NOTIFICATIONS] as const;
 
@@ -21,19 +22,10 @@ export type AppNotification = {
 const NOTIFICATION_COLUMNS =
   "id, user_id, type, note_id, from_user_id, message, read_at, created_at";
 
-async function getCurrentUserId(): Promise<string | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
-
 export async function fetchNotifications(
+  userId: string,
   limit = 20,
 ): Promise<AppNotification[]> {
-  const userId = await getCurrentUserId();
-  if (!userId) return [];
-
   const { data, error } = await supabase
     .from(TABLE_KEYS.NOTIFICATIONS)
     .select(NOTIFICATION_COLUMNS)
@@ -45,10 +37,9 @@ export async function fetchNotifications(
   return (data ?? []) as AppNotification[];
 }
 
-export async function fetchUnreadNotificationCount(): Promise<number> {
-  const userId = await getCurrentUserId();
-  if (!userId) return 0;
-
+export async function fetchUnreadNotificationCount(
+  userId: string,
+): Promise<number> {
   const { count, error } = await supabase
     .from(TABLE_KEYS.NOTIFICATIONS)
     .select("id", { count: "exact", head: true })
@@ -60,25 +51,31 @@ export async function fetchUnreadNotificationCount(): Promise<number> {
 }
 
 export function useNotifications(limit = 20) {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery({
-    queryKey: [...NOTIFICATIONS_QUERY_KEY, "list", limit],
-    queryFn: () => fetchNotifications(limit),
+    queryKey: [...NOTIFICATIONS_QUERY_KEY, userId, "list", limit],
+    queryFn: () => fetchNotifications(userId!, limit),
+    enabled: !authLoading && !!userId,
   });
 }
 
-export function useUnreadNotificationCount() {
-  return useQuery({
-    queryKey: [...NOTIFICATIONS_QUERY_KEY, "unread-count"],
-    queryFn: fetchUnreadNotificationCount,
-  });
-}
+// export function useUnreadNotificationCount() {
+//   const { userId, isLoading: authLoading } = useAuth();
+
+//   return useQuery({
+//     queryKey: [...NOTIFICATIONS_QUERY_KEY, userId, "unread-count"],
+//     queryFn: () => fetchUnreadNotificationCount(userId!),
+//     enabled: !authLoading && !!userId,
+//   });
+// }
 
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
@@ -101,10 +98,10 @@ export function useMarkNotificationRead() {
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async () => {
-      const userId = await getCurrentUserId();
       if (!userId) throw new Error("Not authenticated");
 
       const { error } = await supabase

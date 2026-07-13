@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/client";
 import { getInitials } from "@/components/helpers/constants";
 import { getProfileFromUser, uploadAvatar } from "@/lib/profileUtils";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "../ui/ThemeToggle";
@@ -28,33 +29,23 @@ import { Field, FieldContent, FieldLabel } from "../ui/field";
 export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, userId, isLoading: authLoading } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
+    if (authLoading || !user) return;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      const profile = getProfileFromUser(user);
-      setUserId(user.id);
-      setName(profile.name);
-      setEmail(profile.email);
-      setAvatarUrl(profile.avatar);
-      setIsLoading(false);
-    });
-  }, []);
+    const profile = getProfileFromUser(user);
+    setName(profile.name);
+    setEmail(profile.email);
+    setAvatarUrl(profile.avatar);
+  }, [user, authLoading]);
 
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -118,6 +109,7 @@ export default function ProfilePage() {
   }
 
   const displayAvatar = avatarPreview ?? avatarUrl;
+  const isLoading = authLoading;
 
   if (isLoading) {
     return <Skeleton className="h-[200px] w-[200px] rounded-full" />;

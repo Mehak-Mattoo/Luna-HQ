@@ -3,10 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { BUCKET } from "@/components/helpers/constants";
 import { buildIlikeOrFilter } from "@/lib/postgrestSearch";
-import {
-  fetchFavoriteNoteIds,
-  withFavoriteState,
-} from "@/hooks/useNoteFavorites";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 
 export type NoteFormPayload = {
   title: string;
@@ -34,17 +31,14 @@ export interface Note {
 
 export type NotesFilter = "all" | "uncategorized" | string;
 
-const fetchNotes = async (filter: NotesFilter = "all"): Promise<Note[]> => {
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
+const fetchNotes = async (
+  userId: string,
+  filter: NotesFilter = "all",
+): Promise<Note[]> => {
   let query = supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
-    .eq("user_id", user.id) // ← only owned notes
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (filter === "uncategorized") {
@@ -58,77 +52,73 @@ const fetchNotes = async (filter: NotesFilter = "all"): Promise<Note[]> => {
     throw error;
   }
 
-  const favoriteIds = await fetchFavoriteNoteIds(user.id);
-  return withFavoriteState(data ?? [], favoriteIds) as Note[];
+  return (data ?? []) as Note[];
 };
 
-const fetchNoteById = async (noteId: string): Promise<Note | null> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
+const fetchNoteById = async (
+  userId: string,
+  noteId: string,
+): Promise<Note | null> => {
   const { data, error } = await supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
     .eq("id", noteId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
 
-  const favoriteIds = await fetchFavoriteNoteIds(user.id);
-  return withFavoriteState([data], favoriteIds)[0] as Note;
+  return data as Note;
 };
 
-const searchNotesWithinNotes = async (query: string) => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  
+const searchNotesWithinNotes = async (userId: string, query: string) => {
   const orFilter = buildIlikeOrFilter(["title", "content"], query);
   if (!orFilter) return [];
 
   const { data, error } = await supabase
     .from(TABLE_KEYS.NOTES)
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .or(orFilter);
 
   if (error) {
     throw error;
   }
 
-  const favoriteIds = await fetchFavoriteNoteIds(user.id);
-  return withFavoriteState(data ?? [], favoriteIds) as Note[];
+  return (data ?? []) as Note[];
 };
 
 export function useNotes(
   filter: NotesFilter = "all",
   options?: { enabled?: boolean },
 ) {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery<Note[]>({
-    queryKey: [TABLE_KEYS.NOTES, filter],
-    queryFn: () => fetchNotes(filter),
-    enabled: options?.enabled ?? true,
+    queryKey: [TABLE_KEYS.NOTES, userId, filter],
+    queryFn: () => fetchNotes(userId!, filter),
+    enabled: !authLoading && !!userId && (options?.enabled ?? true),
   });
 }
 
-export function useNote(
-  noteId: string,
-  options?: { enabled?: boolean },
-) {
+export function useNote(noteId: string, options?: { enabled?: boolean }) {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery<Note | null>({
-    queryKey: [TABLE_KEYS.NOTES, "detail", noteId],
-    queryFn: () => fetchNoteById(noteId),
-    enabled: (options?.enabled ?? true) && noteId.length > 0,
+    queryKey: [TABLE_KEYS.NOTES, userId, "detail", noteId],
+    queryFn: () => fetchNoteById(userId!, noteId),
+    enabled:
+      !authLoading &&
+      !!userId &&
+      (options?.enabled ?? true) &&
+      noteId.length > 0,
   });
 }
 
 export function useCreateNote() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (newNote: {
@@ -137,11 +127,7 @@ export function useCreateNote() {
       folder_id?: string | null;
       folder_name?: string | null;
     }) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
+      if (!userId) {
         throw new Error("User not authenticated");
       }
 
@@ -152,7 +138,7 @@ export function useCreateNote() {
             title: newNote.title,
             content: newNote.content,
             folder_id: newNote.folder_id ?? null,
-            user_id: user.id,
+            user_id: userId,
             is_favorite: false,
             folder_name: newNote.folder_name ?? null,
           },
@@ -284,9 +270,11 @@ export function useUploadNoteAttachment() {
 }
 
 export const useSearchNotes = (query: string) => {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery({
-    queryKey: [TABLE_KEYS.NOTES, "searchWithinNotes", query],
-    queryFn: () => searchNotesWithinNotes(query),
-    enabled: query.trim().length >= 2,
+    queryKey: [TABLE_KEYS.NOTES, userId, "searchWithinNotes", query],
+    queryFn: () => searchNotesWithinNotes(userId!, query),
+    enabled: !authLoading && !!userId && query.trim().length >= 2,
   });
 };

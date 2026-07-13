@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,11 @@ import {
   type Note,
   type NoteFormPayload,
 } from "@/hooks/useNotes";
+import {
+  useFavoriteNoteIds,
+  withFavoriteState,
+} from "@/hooks/useNoteFavorites";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import {
   myNotesPath,
@@ -71,8 +76,10 @@ export function NoteDetailPage({
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [sharedNote, setSharedNote] = useState<Note | undefined>(initialNote);
 
+  const shouldFetchCollaboratorAccess = sharedView && access === undefined;
+
   const { data: collaboratorPermission } = useCollaboratorAccess(
-    sharedView ? noteId : undefined,
+    shouldFetchCollaboratorAccess ? noteId : undefined,
   );
 
   const {
@@ -82,6 +89,8 @@ export function NoteDetailPage({
   } = useNote(noteId, {
     enabled: !initialNote,
   });
+  const { data: favoriteIds = new Set<string>() } = useFavoriteNoteIds();
+  const { userId } = useAuth();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const uploadAttachment = useUploadNoteAttachment();
@@ -92,16 +101,21 @@ export function NoteDetailPage({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const contentRef = useRef<HTMLParagraphElement>(null);
 
-  const note = sharedView
+  const rawNote = sharedView
     ? (sharedNote ?? initialNote)
     : (initialNote ?? fetchedNote ?? undefined);
 
-  const canEditShared =
-    collaboratorPermission === "edit" ||
-    (collaboratorPermission === undefined && access === "edit");
+  const note = useMemo(() => {
+    if (!rawNote) return undefined;
+    return withFavoriteState([rawNote], favoriteIds)[0] as Note;
+  }, [rawNote, favoriteIds]);
 
-  const isReadOnly =
-    trimmed || (sharedView ? !canEditShared : readOnly);
+  const canEditShared =
+    access !== undefined
+      ? access === "edit"
+      : collaboratorPermission === "edit";
+
+  const isReadOnly = trimmed || (sharedView ? !canEditShared : readOnly);
 
   useEffect(() => {
     if (initialNote) setSharedNote(initialNote);
@@ -168,13 +182,8 @@ export function NoteDetailPage({
   }, [note, isReadOnly]);
 
   const handleUpdateNote = async (payload: NoteFormPayload) => {
-    if (!note) return;
+    if (!note || !userId) return;
     setSubmitError(null);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
 
     try {
       const { title, content, file } = payload;
@@ -183,7 +192,7 @@ export function NoteDetailPage({
         await uploadAttachment.mutateAsync({
           file,
           noteId: note.id,
-          userId: user.id,
+          userId,
         });
       }
 
@@ -204,19 +213,14 @@ export function NoteDetailPage({
   }
 
   async function handleAttachmentUpload(selectedFile: File) {
-    if (!note) return;
+    if (!note || !userId) return;
     setSubmitError(null);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
 
     try {
       await uploadAttachment.mutateAsync({
         file: selectedFile,
         noteId: note.id,
-        userId: user.id,
+        userId,
       });
       // notes query refetches → attachmentUrl updates via useEffect
     } catch {
@@ -263,7 +267,9 @@ export function NoteDetailPage({
         {!trimmed && (
           <Link
             href={
-              sharedView ? protectedRoutes.SHARED_WITH_ME : protectedRoutes.ALL_NOTES
+              sharedView
+                ? protectedRoutes.SHARED_WITH_ME
+                : protectedRoutes.ALL_NOTES
             }
           >
             Back

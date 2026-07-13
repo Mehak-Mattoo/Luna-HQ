@@ -37,10 +37,11 @@ import {
 } from "@/components/helpers/constants";
 import { useFolders } from "@/hooks/useFolders";
 import { useCreateNote, useNotes } from "@/hooks/useNotes";
+import { useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
 import { useAiActionStats } from "@/hooks/useAIActions";
 import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 import { getProfileFromUser } from "@/lib/profileUtils";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { icons } from "@/assets";
@@ -128,40 +129,42 @@ export default function HomePage() {
   const { openChat, isOpen } = useNoteChatPanel();
   const [openAddFolder, setOpenAddFolder] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [userName, setUserName] = useState("");
+  const { user } = useAuth();
 
   const { data: notes = [], isLoading: notesLoading } = useNotes();
+  const { data: favoriteIds = new Set<string>() } = useFavoriteNoteIds();
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
   const { data: aiStats } = useAiActionStats();
 
+  const notesWithFavorites = useMemo(
+    () => withFavoriteState(notes, favoriteIds),
+    [notes, favoriteIds],
+  );
+
   const greeting = getGreeting();
-  const firstName = userName.split(" ")[0];
+  const firstName = useMemo(() => {
+    const profile = getProfileFromUser(user);
+    return profile.name.split(" ")[0];
+  }, [user]);
 
   const stats = useMemo(
     () => ({
-      notes: notes.length,
+      notes: notesWithFavorites.length,
       folders: folders.length,
-      files: notes.filter((n) => n.attachment_path).length,
-      favorites: notes.filter((n) => n.is_favorite).length,
+      files: notesWithFavorites.filter((n) => n.attachment_path).length,
+      favorites: notesWithFavorites.filter((n) => n.is_favorite).length,
       aiActions: aiStats?.thisMonth ?? 0,
       aiActionsThisWeek: aiStats?.thisWeek ?? 0,
-      notesThisWeek: countSince(notes),
+      notesThisWeek: countSince(notesWithFavorites),
       foldersThisWeek: countSince(folders),
-      filesThisWeek: countSince(notes.filter((n) => n.attachment_path)),
+      filesThisWeek: countSince(notesWithFavorites.filter((n) => n.attachment_path)),
     }),
-    [notes, folders, aiStats],
+    [notesWithFavorites, folders, aiStats],
   );
 
-  const recentNotes = useMemo(() => getRecentNotes(notes, 4), [notes]);
-  const suggestions = useMemo(() => getLunaSuggestions(notes), [notes]);
-  const activity = useMemo(() => getRecentActivity(notes, 5), [notes]);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const profile = getProfileFromUser(user);
-      setUserName(profile.name);
-    });
-  }, []);
+  const recentNotes = useMemo(() => getRecentNotes(notesWithFavorites, 4), [notesWithFavorites]);
+  const suggestions = useMemo(() => getLunaSuggestions(notesWithFavorites), [notesWithFavorites]);
+  const activity = useMemo(() => getRecentActivity(notesWithFavorites, 5), [notesWithFavorites]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

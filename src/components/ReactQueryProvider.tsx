@@ -8,7 +8,17 @@ interface ReactQueryProviderProps {
 }
 
 export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60_000, // 1 min for folders/notes lists
+            refetchOnWindowFocus: false, // or only for notifications
+          },
+        },
+      }),
+  );
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

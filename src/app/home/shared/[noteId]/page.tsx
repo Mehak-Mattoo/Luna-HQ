@@ -2,11 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { NoteDetailPage } from "@/components/pages/NoteDetailPage";
 import { notePath } from "@/components/helpers/routes";
-import {
-  linkInvitesForUser,
-  loadNoteWithAccess,
-  NoteContextError,
-} from "@/lib/noteContextServer";
+import { loadNoteWithAccess, NoteContextError } from "@/lib/noteContextServer";
 import { createClient } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
@@ -24,8 +20,6 @@ export default async function SharedWithMeNotePage({
   } = await supabase.auth.getUser();
 
   if (!user) notFound();
-
-  await linkInvitesForUser(supabase, user.id, user.email);
 
   try {
     const { note, access } = await loadNoteWithAccess(supabase, noteId, {

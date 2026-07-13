@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 
 export interface Folder {
   id: string;
@@ -10,10 +11,11 @@ export interface Folder {
   updated_at: string | null;
 }
 
-export const fetchFolders = async (): Promise<Folder[]> => {
+export const fetchFolders = async (userId: string): Promise<Folder[]> => {
   const { data, error } = await supabase
     .from(TABLE_KEYS.FOLDERS)
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
     throw error;
@@ -22,26 +24,28 @@ export const fetchFolders = async (): Promise<Folder[]> => {
 };
 
 export function useFolders() {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery<Folder[]>({
-    queryKey: [TABLE_KEYS.FOLDERS],
-    queryFn: fetchFolders,
+    queryKey: [TABLE_KEYS.FOLDERS, userId],
+    queryFn: () => fetchFolders(userId!),
+    enabled: !authLoading && !!userId,
   });
 }
 
 export const useCreateFolder = () => {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
+
   return useMutation({
     mutationFn: async (newFolder: { name: string }) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!userId) throw new Error("User not authenticated");
       const { data, error } = await supabase
         .from(TABLE_KEYS.FOLDERS)
         .insert([
           {
             name: newFolder.name.trim(),
-            user_id: user.id,
+            user_id: userId,
           },
         ])
         .select();

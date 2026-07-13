@@ -18,7 +18,7 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
-  useUnreadNotificationCount,
+  // useUnreadNotificationCount,
   type AppNotification,
 } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
@@ -37,9 +37,11 @@ function notificationLabel(notification: AppNotification) {
 export function NotificationSystem() {
   const router = useRouter();
   const { data: notifications = [], isLoading } = useNotifications();
-  const { data: unreadCount = 0 } = useUnreadNotificationCount();
+  // const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
 
   function handleNotificationClick(notification: AppNotification) {
     if (!notification.read_at) {

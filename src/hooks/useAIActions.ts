@@ -2,19 +2,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/wrapper/AuthProvider";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const AI_ACTIONS_QUERY_KEY = [TABLE_KEYS.AI_ACTIONS] as const;
 
-async function fetchAiActionStats() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { thisMonth: 0, thisWeek: 0 };
-  }
-
+async function fetchAiActionStats(userId: string) {
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
@@ -26,12 +20,12 @@ async function fetchAiActionStats() {
     supabase
       .from(TABLE_KEYS.AI_ACTIONS)
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .gte("created_at", monthStart),
     supabase
       .from(TABLE_KEYS.AI_ACTIONS)
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .gte("created_at", weekStart),
   ]);
 
@@ -45,9 +39,12 @@ async function fetchAiActionStats() {
 }
 
 export function useAiActionStats() {
+  const { userId, isLoading: authLoading } = useAuth();
+
   return useQuery({
-    queryKey: AI_ACTIONS_QUERY_KEY,
-    queryFn: fetchAiActionStats,
+    queryKey: [...AI_ACTIONS_QUERY_KEY, userId],
+    queryFn: () => fetchAiActionStats(userId!),
+    enabled: !authLoading && !!userId,
   });
 }
 

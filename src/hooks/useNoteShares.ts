@@ -2,14 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import type { Note } from "./useNotes";
-import {
-  linkInvitesForUser,
-} from "@/lib/noteContextServer";
-import {
-  fetchFavoriteNoteIds,
-  withFavoriteState,
-} from "@/hooks/useNoteFavorites";
-
+import { useAuth } from "@/components/wrapper/AuthProvider";
 export type SharePermission = "view" | "edit";
 
 export type NoteShare = {
@@ -40,9 +33,7 @@ export function normalizeNoteId(noteId: string | number): number {
 }
 
 export function useNoteShares(noteId: string | number | undefined) {
-  const normalizedId = isValidNoteId(noteId)
-    ? normalizeNoteId(noteId)
-    : null;
+  const normalizedId = isValidNoteId(noteId) ? normalizeNoteId(noteId) : null;
 
   return useQuery({
     queryKey: [TABLE_KEYS.NOTE_SHARES, normalizedId],
@@ -62,6 +53,7 @@ export function useNoteShares(noteId: string | number | undefined) {
 
 export function useInviteToNote() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -73,10 +65,7 @@ export function useInviteToNote() {
       email: string;
       permission?: SharePermission;
     }) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!userId) throw new Error("Not authenticated");
 
       const trimmed = email.trim().toLowerCase();
       if (!trimmed) throw new Error("Email is required");
@@ -85,7 +74,7 @@ export function useInviteToNote() {
         .from(TABLE_KEYS.NOTE_SHARES)
         .insert({
           note_id: normalizeNoteId(noteId),
-          owner_id: user.id,
+          owner_id: userId,
           shared_with_email: trimmed,
           permission,
         })
@@ -221,22 +210,12 @@ export function useUpdateNoteLinkShare() {
   });
 }
 
-export async function linkInvitesToCurrentUser() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await linkInvitesForUser(supabase, user.id, user.email);
-}
-
 async function fetchCollaboratorPermission(
+  userId: string,
+  email: string | undefined,
   noteId: string | number,
 ): Promise<SharePermission | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || !isValidNoteId(noteId)) return null;
+  if (!isValidNoteId(noteId)) return null;
 
   const normalizedId = normalizeNoteId(noteId);
 
@@ -244,20 +223,20 @@ async function fetchCollaboratorPermission(
     .from(TABLE_KEYS.NOTE_SHARES)
     .select("permission")
     .eq("note_id", normalizedId)
-    .eq("shared_with_user_id", user.id)
+    .eq("shared_with_user_id", userId)
     .maybeSingle();
 
   if (byUserIdError) throw byUserIdError;
   if (byUserId?.permission) return byUserId.permission;
 
-  const email = user.email?.trim().toLowerCase() ?? "";
-  if (!email) return null;
+  const normalizedEmail = email?.trim().toLowerCase() ?? "";
+  if (!normalizedEmail) return null;
 
   const { data: byEmail, error: byEmailError } = await supabase
     .from(TABLE_KEYS.NOTE_SHARES)
     .select("permission")
     .eq("note_id", normalizedId)
-    .eq("shared_with_email", email)
+    .eq("shared_with_email", normalizedEmail)
     .maybeSingle();
 
   if (byEmailError) throw byEmailError;
@@ -266,14 +245,14 @@ async function fetchCollaboratorPermission(
 
 /** Live collaborator permission for a shared note (client-side refresh). */
 export function useCollaboratorAccess(noteId: string | number | undefined) {
-  const normalizedId = isValidNoteId(noteId)
-    ? normalizeNoteId(noteId)
-    : null;
+  const { user, userId, isLoading: authLoading } = useAuth();
+  const normalizedId = isValidNoteId(noteId) ? normalizeNoteId(noteId) : null;
 
   return useQuery({
-    queryKey: [TABLE_KEYS.NOTE_SHARES, "access", normalizedId],
-    queryFn: () => fetchCollaboratorPermission(normalizedId!),
-    enabled: normalizedId !== null,
+    queryKey: [TABLE_KEYS.NOTE_SHARES, "access", userId, normalizedId],
+    queryFn: () =>
+      fetchCollaboratorPermission(userId!, user?.email, normalizedId!),
+    enabled: !authLoading && !!userId && normalizedId !== null,
   });
 }
 
@@ -285,15 +264,12 @@ export type SharedWithMeNote = {
 };
 
 export function useSharedWithMeNotes() {
-  return useQuery({
-    queryKey: [TABLE_KEYS.NOTE_SHARES, "shared-with-me"],
-    queryFn: async (): Promise<SharedWithMeNote[]> => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return [];
+  const { user, userId, isLoading: authLoading } = useAuth();
 
-      await linkInvitesToCurrentUser();
+  return useQuery({
+    queryKey: [TABLE_KEYS.NOTE_SHARES, "shared-with-me", userId],
+    queryFn: async (): Promise<SharedWithMeNote[]> => {
+      if (!userId || !user) return [];
 
       const email = user.email?.trim().toLowerCase() ?? "";
 
@@ -315,17 +291,15 @@ export function useSharedWithMeNotes() {
 
       if (email) {
         query = query.or(
-          `shared_with_user_id.eq.${user.id},shared_with_email.eq.${email}`,
+          `shared_with_user_id.eq.${userId},shared_with_email.eq.${email}`,
         );
       } else {
-        query = query.eq("shared_with_user_id", user.id);
+        query = query.eq("shared_with_user_id", userId);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-
-      const favoriteIds = await fetchFavoriteNoteIds(user.id);
 
       return (data ?? [])
         .filter((row) => row.notes)
@@ -333,11 +307,9 @@ export function useSharedWithMeNotes() {
           shareId: row.id,
           permission: row.permission,
           sharedAt: row.created_at,
-          note: withFavoriteState(
-            [row.notes as unknown as Note],
-            favoriteIds,
-          )[0],
+          note: row.notes as unknown as Note,
         }));
     },
+    enabled: !authLoading && !!userId && !!user,
   });
 }

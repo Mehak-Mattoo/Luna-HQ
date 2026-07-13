@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactQueryProvider } from "@/components/ReactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
+import AuthProvider from "@/components/wrapper/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -48,7 +49,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Toaster />
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <ReactQueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>
