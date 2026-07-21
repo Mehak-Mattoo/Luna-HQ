@@ -48,7 +48,9 @@ import { cn, stripScriptTags } from "@/lib/utils";
 import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
 import { useCollaboratorAccess } from "@/hooks/useNoteShares";
 import type { NoteAccess } from "@/lib/noteContextServer";
-import { useNoteNavbarStore } from "@/store/useNoteNavbarStore";
+import {
+  useSetNavbarNote,
+} from "@/store/useNoteNavbarStore";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -228,8 +230,7 @@ export function NoteDetailPage({
     }
   }
 
-  useNoteNavbarStore((s) => s.setNote(trimmed || sharedView ? null : note ?? null));
-
+  useSetNavbarNote(trimmed || sharedView ? undefined : note);
   useNoteShortcuts({
     onDelete: () => setOpenDeleteDialog(true),
     onSearch: () => {
