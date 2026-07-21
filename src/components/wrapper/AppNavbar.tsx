@@ -1,10 +1,10 @@
 "use client";
 
 import Navbar from "@/components/helpers/Navbar";
-import { useNavbarNote } from "@/components/wrapper/NoteNavbarContext";
+import { useNoteNavbarStore } from "@/store/useNoteNavbarStore";
 
 export function AppNavbar() {
-  const note = useNavbarNote();
+  const note = useNoteNavbarStore((s) => s.note);
 
   return <Navbar note={note ?? undefined} />;
 }

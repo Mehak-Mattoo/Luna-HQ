@@ -1,12 +1,23 @@
 "use client";
 
-import { NoteChatPanel } from "@/components/NoteChatPanel";
-import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+
+import { useNoteChatStore } from "@/store/useNoteChatStore";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+
+const NoteChatPanel = dynamic(
+  () =>
+    import("@/components/NoteChatPanel").then((mod) => ({
+      default: mod.NoteChatPanel,
+    })),
+  { ssr: false },
+);
 
 export function NoteChatLayoutPanel() {
   const { isOpen, note, pendingPrompt, closeChat, clearPendingPrompt } =
-    useNoteChatPanel();
+    useNoteChatStore();
 
   const showPanel = isOpen && note;
 
@@ -20,12 +31,22 @@ export function NoteChatLayoutPanel() {
     >
       <div className="flex h-full w-80 flex-col sm:w-96">
         {showPanel && (
-          <NoteChatPanel
-            note={note}
-            pendingPrompt={pendingPrompt}
-            onPendingPromptSent={clearPendingPrompt}
-            onClose={closeChat}
-          />
+          <Suspense
+            fallback={
+              <>
+                <div className="flex h-full w-full items-center justify-center">
+                  <Loader2 className="size-4 animate-spin" />
+                </div>
+              </>
+            }
+          >
+            <NoteChatPanel
+              note={note}
+              pendingPrompt={pendingPrompt}
+              onPendingPromptSent={clearPendingPrompt}
+              onClose={closeChat}
+            />
+          </Suspense>
         )}
       </div>
     </aside>

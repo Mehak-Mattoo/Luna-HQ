@@ -39,7 +39,7 @@ import { useFolders } from "@/hooks/useFolders";
 import { useCreateNote, useNotes } from "@/hooks/useNotes";
 import { useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
 import { useAiActionStats } from "@/hooks/useAIActions";
-import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
+import { useNoteChatStore } from "@/store/useNoteChatStore";
 import { useAuth } from "@/components/wrapper/AuthProvider";
 import { getProfileFromUser } from "@/lib/profileUtils";
 import { cn } from "@/lib/utils";
@@ -126,7 +126,7 @@ const ACTIVITY_ICONS = {
 
 export default function HomePage() {
   const router = useRouter();
-  const { openChat, isOpen } = useNoteChatPanel();
+  const { openChat, isOpen } = useNoteChatStore();
   const [openAddFolder, setOpenAddFolder] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { user } = useAuth();

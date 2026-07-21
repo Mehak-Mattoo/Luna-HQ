@@ -43,12 +43,12 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "../ui/context-menu";
-import { useSetNavbarNote } from "@/components/wrapper/NoteNavbarContext";
-import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
+import { useNoteChatStore } from "@/store/useNoteChatStore";
 import { cn, stripScriptTags } from "@/lib/utils";
 import { useNoteShortcuts } from "@/hooks/useNoteShortcuts";
 import { useCollaboratorAccess } from "@/hooks/useNoteShares";
 import type { NoteAccess } from "@/lib/noteContextServer";
+import { useNoteNavbarStore } from "@/store/useNoteNavbarStore";
 
 type NoteDetailPageProps = {
   noteId: string;
@@ -96,7 +96,7 @@ export function NoteDetailPage({
   const uploadAttachment = useUploadNoteAttachment();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const { openChat, closeChat } = useNoteChatPanel();
+  const { openChat, closeChat } = useNoteChatStore();
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const contentRef = useRef<HTMLParagraphElement>(null);
@@ -228,7 +228,7 @@ export function NoteDetailPage({
     }
   }
 
-  useSetNavbarNote(trimmed || sharedView ? undefined : note);
+  useNoteNavbarStore((s) => s.setNote(trimmed || sharedView ? null : note ?? null));
 
   useNoteShortcuts({
     onDelete: () => setOpenDeleteDialog(true),

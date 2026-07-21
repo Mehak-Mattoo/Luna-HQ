@@ -15,10 +15,10 @@ import {
 } from "@/hooks/useNotes";
 import { useToggleFavorite, useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
 import { useFolders } from "@/hooks/useFolders";
-import { useNoteChatPanel } from "@/components/wrapper/NoteChatContext";
 import { LunaButton } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useNoteChatStore } from "@/store/useNoteChatStore";
 
 type ViewMode = "grid" | "list";
 type ContentTab = "all" | "notes" | "files";
@@ -189,7 +189,7 @@ const NotesPage = () => {
 
   const [activeTab, setActiveTab] = useState<ContentTab>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const { openChat } = useNoteChatPanel();
+  const { openChat } = useNoteChatStore();
 
   const createNote = useCreateNote();
 
