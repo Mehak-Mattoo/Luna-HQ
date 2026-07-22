@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { TABLE_KEYS } from "@/components/helpers/constants";
 import { BUCKET } from "@/components/helpers/constants";
@@ -143,14 +148,22 @@ export function useCreateNote() {
             folder_name: newNote.folder_name ?? null,
           },
         ])
-        .select();
+        .select()
+        .single();
 
       if (error) throw error;
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES] });
+    onSuccess: (created) => {
+      if (!userId) return;
+      queryClient.setQueryData(
+        [TABLE_KEYS.NOTES, userId, "detail", String(created.id)],
+        created,
+      );
+     queryClient.invalidateQueries({
+       queryKey: [TABLE_KEYS.NOTES, userId],
+     });
     },
   });
 }
@@ -219,7 +232,7 @@ export function useDeleteNote() {
           return old?.filter((note) => String(note.id) !== String(id)) ?? [];
         },
       );
-      //throw the cache too if it was ever opened earlier 
+      //throw the cache too if it was ever opened earlier
       queryClient.removeQueries({
         queryKey: [TABLE_KEYS.NOTES, userId, "detail", id],
       });
@@ -300,3 +313,26 @@ export const useSearchNotes = (query: string) => {
     enabled: !authLoading && !!userId && query.trim().length >= 2,
   });
 };
+
+export function prefetchNotes(
+  queryClient: QueryClient,
+  userId: string,
+  filter: NotesFilter,
+) {
+  return queryClient.prefetchQuery({
+    queryKey: [TABLE_KEYS.NOTES, userId, filter],
+    queryFn: () => fetchNotes(userId, filter),
+  });
+}
+
+// single note prefetch
+export function prefetchNote(
+  queryClient: QueryClient,
+  userId: string,
+  noteId: string,
+) {
+  return queryClient.prefetchQuery({
+    queryKey: [TABLE_KEYS.NOTES, userId, "detail", noteId],
+    queryFn: () => fetchNoteById(userId, noteId),
+  });
+}

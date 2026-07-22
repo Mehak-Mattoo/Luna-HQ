@@ -39,8 +39,13 @@ import {
   useFolders,
   type Folder as FolderType,
 } from "@/hooks/useFolders";
-import { useNotes } from "@/hooks/useNotes";
-import { useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
+import { prefetchNotes, useNotes } from "@/hooks/useNotes";
+import {
+  useFavoriteNoteIds,
+  withFavoriteState,
+} from "@/hooks/useNoteFavorites";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../wrapper/AuthProvider";
 
 function notesHref(folderId?: string, create?: boolean) {
   const params = new URLSearchParams();
@@ -54,6 +59,8 @@ function notesHref(folderId?: string, create?: boolean) {
 
 export function SidebarFolders() {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const { userId } = useAuth();
   const searchParams = useSearchParams();
   const activeFolderId = searchParams.get("folder");
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
@@ -105,6 +112,11 @@ export function SidebarFolders() {
       toast.error("Failed to delete folder");
     }
   }
+
+  const handleFolderHover = (folderId: string) => {
+    if (!userId || activeFolderId === folderId) return;
+    prefetchNotes(queryClient, userId, folderId);
+  };
 
   return (
     <>
@@ -168,7 +180,11 @@ export function SidebarFolders() {
                     tooltip={folder.name}
                     className="data-[active=true]:bg-accent/10 data-[active=true]:text-accent"
                   >
-                    <Link href={notesHref(folder.id)}>
+                    <Link
+                      href={notesHref(folder.id)}
+                      onMouseEnter={() => handleFolderHover(folder.id)}
+                      onFocus={() => handleFolderHover(folder.id)}
+                    >
                       <Folder className="size-4 text-accent/70" />
                       <span className="truncate">{folder.name}</span>
                     </Link>

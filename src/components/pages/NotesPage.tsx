@@ -4,21 +4,28 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Grid3X3, LayoutList, Plus, Star } from "lucide-react";
 import { notePath } from "@/components/helpers/routes";
-import { getFolderTagStyle } from "@/components/helpers/constants";
+import { getFolderTagStyle, TABLE_KEYS } from "@/components/helpers/constants";
 import { formatUIFriendlyDate } from "@/components/helpers/constants";
 import { Button } from "../ui/button";
 import {
   useCreateNote,
+  prefetchNote,
   useNotes,
   type Note,
   type NotesFilter,
 } from "@/hooks/useNotes";
-import { useToggleFavorite, useFavoriteNoteIds, withFavoriteState } from "@/hooks/useNoteFavorites";
+import {
+  useToggleFavorite,
+  useFavoriteNoteIds,
+  withFavoriteState,
+} from "@/hooks/useNoteFavorites";
 import { useFolders } from "@/hooks/useFolders";
 import { LunaButton } from "../ui/LunaButton";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useNoteChatStore } from "@/store/useNoteChatStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../wrapper/AuthProvider";
 
 type ViewMode = "grid" | "list";
 type ContentTab = "all" | "notes" | "files";
@@ -38,9 +45,16 @@ type NoteCardProps = {
   folderName: string | null;
   viewMode: ViewMode;
   onClick: () => void;
+  onHover: () => void;
 };
 
-function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
+function NoteCard({
+  note,
+  folderName,
+  viewMode,
+  onClick,
+  onHover,
+}: NoteCardProps) {
   const tagStyle = folderName ? getFolderTagStyle(folderName) : null;
   const toggleFavorite = useToggleFavorite();
 
@@ -61,6 +75,8 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
       <button
         type="button"
         onClick={onClick}
+        onMouseEnter={onHover}
+        onFocus={onHover}
         className="group flex w-full items-center gap-4 rounded-xl border border-border bg-card px-4 py-3 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
       >
         <div className="min-w-0 flex-1">
@@ -102,6 +118,8 @@ function NoteCard({ note, folderName, viewMode, onClick }: NoteCardProps) {
       type="button"
       onClick={onClick}
       className="group flex h-full w-full flex-col rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-violet-500/30 hover:shadow-md"
+      onMouseEnter={onHover}
+      onFocus={onHover}
     >
       <div className="flex items-start justify-between gap-2">
         <p className="line-clamp-2 font-medium leading-snug">{note.title}</p>
@@ -174,6 +192,13 @@ const NotesPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const folderId = searchParams.get("folder");
+  const queryClient = useQueryClient();
+  const { userId } = useAuth();
+
+  const handleNoteHover = (note: Note) => {
+    if (!userId) return;
+    prefetchNote(queryClient, userId, String(note.id));
+  };
 
   const notesFilter: NotesFilter = folderId ?? "all";
   const { data: notes = [], isLoading, isError, error } = useNotes(notesFilter);
@@ -217,8 +242,8 @@ const NotesPage = () => {
       content: "",
       folder_id: folderId,
     });
-    if (createdNote?.[0]) {
-      router.push(notePath(createdNote[0]));
+    if (createdNote) {
+      router.push(notePath(createdNote));
     }
   }
 
@@ -323,6 +348,7 @@ const NotesPage = () => {
               <NoteCard
                 key={note.id}
                 note={note}
+                onHover={() => handleNoteHover(note)}
                 folderName={
                   note.folder_id
                     ? (folderNameById.get(note.folder_id) ?? null)

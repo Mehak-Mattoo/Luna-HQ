@@ -4,12 +4,14 @@ import {
   DialogContent,
   Dialog,
 } from "../ui/dialog";
-import { useSearchNotes } from "@/hooks/useNotes";
+import { Note, prefetchNote, prefetchNotes, useSearchNotes } from "@/hooks/useNotes";
 import { Input } from "../ui/input";
 import { highlightText } from "../helpers/HighlightText";
-import { getSnippet } from "../helpers/constants";
+import { getSnippet, TABLE_KEYS } from "../helpers/constants";
 import { useRouter } from "next/navigation";
 import { notePath } from "../helpers/routes";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../wrapper/AuthProvider";
 
 type SearchModalProps = {
   open: boolean;
@@ -25,6 +27,17 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
     error,
   } = useSearchNotes(query);
   const router = useRouter();
+    const queryClient = useQueryClient();
+    const { userId } = useAuth();
+
+    const handleSearchHover = (note: Note) => {
+      if (!userId) return;
+       queryClient.setQueryData(
+         [TABLE_KEYS.NOTES, userId, "detail", String(note.id)],
+         note,
+       );
+      // prefetchNote(queryClient, userId, String(note.id));
+    };
 
   return (
     <>
@@ -59,6 +72,8 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
                 router.push(notePath(result));
                 onOpenChange(false);
               }}
+              onMouseEnter={() => handleSearchHover(result)}
+              onFocus={() => handleSearchHover(result)}
               className="cursor-pointer"
             >
               <p key={result.id}>{highlightText(result.title, query)}</p>

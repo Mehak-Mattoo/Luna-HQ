@@ -38,8 +38,8 @@ export function AppSidebar() {
       content: "",
       folder_id: null,
     });
-    if (created?.[0]) {
-      router.push(notePath(created[0]));
+    if (created) {
+      router.push(notePath(created));
     }
   }
 
