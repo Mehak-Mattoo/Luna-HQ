@@ -157,6 +157,7 @@ export function useCreateNote() {
 
 export function useUpdateNote() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (note: Note) => {
@@ -169,7 +170,8 @@ export function useUpdateNote() {
           folder_name: note.folder_name ?? null,
         })
         .eq("id", note.id)
-        .select();
+        .select()
+        .single();
 
       if (error) {
         throw error;
@@ -177,14 +179,23 @@ export function useUpdateNote() {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES] });
+    onSuccess: (updated) => {
+      if (!userId) return;
+      // 1) setting cached data for the updated open note
+      queryClient.setQueryData(
+        [TABLE_KEYS.NOTES, userId, "detail", String(updated.id)],
+        updated,
+      );
+      queryClient.invalidateQueries({
+        queryKey: [TABLE_KEYS.NOTES, userId],
+      });
     },
   });
 }
 
 export function useDeleteNote() {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string | number) => {
@@ -200,8 +211,19 @@ export function useDeleteNote() {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES] });
+    onSuccess: (id) => {
+      //Instantly delete the note from sidebar
+      queryClient.setQueriesData<Note[]>(
+        { queryKey: [TABLE_KEYS.NOTES, userId] },
+        (old) => {
+          return old?.filter((note) => String(note.id) !== String(id)) ?? [];
+        },
+      );
+      //throw the cache too if it was ever opened earlier 
+      queryClient.removeQueries({
+        queryKey: [TABLE_KEYS.NOTES, userId, "detail", id],
+      });
+      queryClient.invalidateQueries({ queryKey: [TABLE_KEYS.NOTES, userId] });
     },
   });
 }
